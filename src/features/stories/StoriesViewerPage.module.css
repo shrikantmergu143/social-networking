@@ -1,0 +1,187 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0A0A12;
+  position: relative;
+  padding: var(--spacing-md);
+}
+
+.viewerContainer {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 90vh;
+  max-height: 820px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+}
+
+.progressContainer {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  gap: 4px;
+  z-index: 20;
+}
+
+.progressBarTrack {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: white;
+  transition: width 0.1s linear;
+}
+
+.topBar {
+  position: absolute;
+  top: 26px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+  color: white;
+}
+
+.authorMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.authorName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+}
+
+.storyTime {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.closeBtn {
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.closeBtn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.mediaWrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.storyImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.tapZoneLeft {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  left: 0;
+  width: 40%;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.tapZoneRight {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  right: 0;
+  width: 60%;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.storyCaption {
+  position: absolute;
+  bottom: 80px;
+  left: 16px;
+  right: 16px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.replyBar {
+  position: absolute;
+  bottom: 16px;
+  left: 14px;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replyInput {
+  flex: 1;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  color: white;
+  padding: 0 16px;
+  font-size: 0.875rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.replyInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sendBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}

@@ -1,0 +1,61 @@
+.carouselContainer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  overflow: hidden;
+}
+
+.scrollRow {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.storyItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.storyItem:active {
+  transform: scale(0.96);
+}
+
+.avatarRingWrapper {
+  position: relative;
+  border-radius: var(--radius-full);
+}
+
+.addIcon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.storyName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 64px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,60 @@
+.feedContainer {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.createPostBar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 14px var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--spacing-xl);
+  cursor: pointer;
+  box-shadow: var(--shadow-subtle);
+  transition: all var(--transition-fast);
+}
+
+.createPostBar:hover {
+  border-color: var(--primary);
+  background: var(--surface-subtle);
+}
+
+.fakeInput {
+  flex: 1;
+  font-size: 0.9375rem;
+  color: var(--text-tertiary);
+  user-select: none;
+}
+
+.filterTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--spacing-lg);
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.tabBtnActive {
+  background: var(--primary-light);
+  color: var(--primary);
+}

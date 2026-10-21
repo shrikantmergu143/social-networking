@@ -1,0 +1,111 @@
+.navBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-top: 1px solid rgba(232, 234, 245, 0.9);
+  z-index: 40;
+  padding-bottom: max(env(safe-area-inset-bottom), 4px);
+  box-shadow: 0 -4px 20px rgba(18, 18, 38, 0.05);
+}
+
+@media (min-width: 1024px) {
+  .navBar {
+    display: none;
+  }
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-sm);
+}
+
+.tabItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 48px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  position: relative;
+  transition: all var(--transition-fast);
+  padding: 4px 8px;
+  border-radius: var(--radius-md);
+  user-select: none;
+}
+
+.tabItem:active {
+  transform: scale(0.92);
+}
+
+.tabItemActive {
+  color: var(--primary);
+}
+
+.tabItemActive::before {
+  content: '';
+  position: absolute;
+  top: 0px;
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: var(--gradient-primary);
+  box-shadow: 0 1px 8px rgba(255, 51, 102, 0.5);
+}
+
+.iconContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabIcon {
+  transition: transform var(--transition-fast);
+}
+
+.tabItemActive .tabIcon {
+  transform: translateY(-2px);
+  color: var(--primary);
+}
+
+.tabLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  margin-top: 2px;
+  letter-spacing: -0.01em;
+}
+
+.tabItemActive .tabLabel {
+  font-weight: 700;
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid white;
+  box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4);
+}

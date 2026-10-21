@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Aura - Social Networking \u0026 Dating",
+  "description": "Modern social networking and dating web application combining visual feeds with discovery and matchmaking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

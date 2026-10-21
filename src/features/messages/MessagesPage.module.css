@@ -1,0 +1,333 @@
+.chatRoot {
+  display: flex;
+  height: calc(100vh - var(--header-height) - 40px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 1023px) {
+  .chatRoot {
+    height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - 20px);
+  }
+}
+
+/* Sidebar List */
+.convListPanel {
+  width: 320px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .convListPanel {
+    width: 100%;
+  }
+  .hiddenOnMobile {
+    display: none !important;
+  }
+}
+
+.panelHeader {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.panelTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.convSearchInput {
+  width: 100%;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.convSearchInput:focus {
+  border-color: var(--primary);
+  background: white;
+}
+
+.convListScroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.convItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--spacing-lg);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition-fast);
+}
+
+.convItem:hover {
+  background: var(--surface-subtle);
+}
+
+.convItemActive {
+  background: var(--primary-light) !important;
+}
+
+.convContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.convTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.convName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.convTime {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+}
+
+.convSnippet {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unreadPill {
+  background: var(--primary);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  padding: 1px 6px;
+}
+
+/* Chat Main Stage */
+.chatStage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-main);
+  min-width: 0;
+}
+
+.stageHeader {
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.stageHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backBtn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 4px;
+}
+
+@media (max-width: 767px) {
+  .backBtn {
+    display: flex;
+  }
+}
+
+.stageName {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stageStatus {
+  font-size: 0.6875rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Messages Scroll */
+.messagesScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.messageRow {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+}
+
+.myMessage {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.theirMessage {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.myBubble {
+  background: var(--gradient-primary);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.theirBubble {
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+
+.metaText {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typingIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  align-self: flex-start;
+}
+
+.typingDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: bounce 1s infinite alternate;
+}
+
+/* Chat Input Bar */
+.inputBar {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chatInput {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  padding: 0 16px;
+  font-size: 0.9375rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.chatInput:focus {
+  border-color: var(--primary);
+  background: white;
+}
+
+.sendBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.sendBtn:hover {
+  transform: scale(1.05);
+}
+
+.quickPrompts {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 6px var(--spacing-lg);
+  background: var(--surface);
+  border-top: 1px solid var(--border-light);
+}
+
+.promptChip {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.promptChip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}

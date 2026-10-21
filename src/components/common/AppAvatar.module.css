@@ -1,0 +1,53 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+}
+
+.avatar {
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  background-color: var(--surface-subtle);
+  display: block;
+}
+
+.hasStoryRing {
+  padding: 2.5px;
+  background: var(--gradient-primary);
+}
+
+.hasSeenRing {
+  padding: 2px;
+  background: var(--border);
+}
+
+.verifiedBadge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--primary);
+  color: white;
+  border-radius: var(--radius-full);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  font-size: 9px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background-color: var(--success);
+  border: 2px solid white;
+}

@@ -1,0 +1,116 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+}
+
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xl);
+  padding: 0 var(--spacing-xl);
+}
+
+.brandLink {
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brandWordmark {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.navLinks {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .navLinks {
+    display: flex;
+  }
+}
+
+.navLink {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--transition-fast);
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.mainContent {
+  flex: 1;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin-top: auto;
+}
+
+.footerContent {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+@media (min-width: 768px) {
+  .footerContent {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.footerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.footerLinks {
+  display: flex;
+  gap: var(--spacing-lg);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.footerLinks a:hover {
+  color: var(--primary);
+}

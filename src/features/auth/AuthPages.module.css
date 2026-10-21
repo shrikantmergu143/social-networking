@@ -1,0 +1,155 @@
+.authContainer {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.cardHeader {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.formGroup {
+  margin-bottom: var(--spacing-md);
+}
+
+.label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 0 14px;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  outline: none;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 79, 129, 0.12);
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: var(--error);
+  margin-top: 4px;
+}
+
+.strengthBar {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  height: 4px;
+}
+
+.strengthSegment {
+  flex: 1;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background var(--transition-fast);
+}
+
+.socialDivider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: var(--spacing-lg) 0;
+  color: var(--text-tertiary);
+  font-size: 0.8125rem;
+}
+
+.socialDivider::before,
+.socialDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.socialButton {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: 8px;
+}
+
+.socialButton:hover {
+  background: var(--surface-subtle);
+  border-color: var(--border-strong);
+}
+
+.demoBanner {
+  background: var(--gradient-subtle);
+  border: 1px dashed var(--primary);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

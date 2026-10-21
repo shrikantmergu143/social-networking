@@ -1,0 +1,106 @@
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.searchHeader {
+  margin-bottom: var(--spacing-xl);
+}
+
+.searchBarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.searchInput {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 44px 0 48px;
+  font-size: 1rem;
+  outline: none;
+  font-family: inherit;
+  box-shadow: var(--shadow-subtle);
+}
+
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 79, 129, 0.12);
+}
+
+.searchIcon {
+  position: absolute;
+  left: 18px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.clearBtn {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.tabsRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tabBtn {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tabBtnActive {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.userCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.userLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.userName {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.userSub {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
