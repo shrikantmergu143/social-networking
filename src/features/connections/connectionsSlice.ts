@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { UserProfile } from '../../types';
-import { MOCK_USERS } from '../../mocks/users';
 
 export interface ConnectionsState {
   following: UserProfile[];
@@ -10,9 +9,9 @@ export interface ConnectionsState {
 }
 
 const initialState: ConnectionsState = {
-  following: MOCK_USERS.filter(u => u.isFollowing),
-  followers: [MOCK_USERS[0], MOCK_USERS[1], MOCK_USERS[3], MOCK_USERS[5], MOCK_USERS[12], MOCK_USERS[17]],
-  pendingRequests: [MOCK_USERS[4], MOCK_USERS[8]],
+  following: [],
+  followers: [],
+  pendingRequests: [],
   blockedUsers: []
 };
 
@@ -20,6 +19,18 @@ export const connectionsSlice = createSlice({
   name: 'connections',
   initialState,
   reducers: {
+    replaceFollowing: (state, action: PayloadAction<UserProfile[]>) => {
+      state.following = action.payload;
+    },
+    replaceFollowers: (state, action: PayloadAction<UserProfile[]>) => {
+      state.followers = action.payload;
+    },
+    replacePendingRequests: (state, action: PayloadAction<UserProfile[]>) => {
+      state.pendingRequests = action.payload;
+    },
+    replaceBlockedUsers: (state, action: PayloadAction<UserProfile[]>) => {
+      state.blockedUsers = action.payload;
+    },
     toggleFollowUser: (state, action: PayloadAction<UserProfile>) => {
       const user = action.payload;
       const index = state.following.findIndex(u => u.id === user.id);
@@ -30,7 +41,7 @@ export const connectionsSlice = createSlice({
       }
     },
     removeFollower: (state, action: PayloadAction<string>) => {
-      state.followers = state.followers.filter(u => u.id !== action.payload);
+      state.followers = state.followers.filter?.(u => u.id !== action.payload);
     },
     acceptFollowRequest: (state, action: PayloadAction<string>) => {
       const userId = action.payload;
@@ -44,25 +55,29 @@ export const connectionsSlice = createSlice({
       }
     },
     declineFollowRequest: (state, action: PayloadAction<string>) => {
-      state.pendingRequests = state.pendingRequests.filter(u => u.id !== action.payload);
+      state.pendingRequests = state.pendingRequests.filter?.(u => u.id !== action.payload);
     },
     blockUser: (state, action: PayloadAction<UserProfile>) => {
       const user = action.payload;
-      state.following = state.following.filter(u => u.id !== user.id);
-      state.followers = state.followers.filter(u => u.id !== user.id);
-      state.pendingRequests = state.pendingRequests.filter(u => u.id !== user.id);
+      state.following = state.following.filter?.(u => u.id !== user.id);
+      state.followers = state.followers.filter?.(u => u.id !== user.id);
+      state.pendingRequests = state.pendingRequests.filter?.(u => u.id !== user.id);
       if (!state.blockedUsers.some(u => u.id === user.id)) {
         state.blockedUsers.push(user);
       }
     },
     unblockUser: (state, action: PayloadAction<string>) => {
-      state.blockedUsers = state.blockedUsers.filter(u => u.id !== action.payload);
+      state.blockedUsers = state.blockedUsers.filter?.(u => u.id !== action.payload);
     }
   }
 });
 
 export const {
   toggleFollowUser,
+  replaceFollowing,
+  replaceFollowers,
+  replacePendingRequests,
+  replaceBlockedUsers,
   removeFollower,
   acceptFollowRequest,
   declineFollowRequest,

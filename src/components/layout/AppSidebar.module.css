@@ -105,7 +105,8 @@
   flex-direction: column;
   gap: 4px;
   padding: var(--spacing-sm) var(--spacing-md);
-  max-height: calc(100vh - 300px);
+  max-height: calc(100vh - 212px);
+  overflow: auto;
 }
 
 .navItem {
@@ -224,53 +225,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
-}
-
-.premiumBanner {
-  background: linear-gradient(135deg, rgba(255, 159, 28, 0.1) 0%, rgba(255, 51, 102, 0.1) 100%);
-  border: 1px solid rgba(255, 159, 28, 0.35);
-  border-radius: var(--radius-lg);
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.premiumBanner:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
-  box-shadow: 0 6px 18px rgba(255, 159, 28, 0.2);
-}
-
-.premiumHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2px;
-}
-
-.premiumTitle {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.vipTag {
-  background: var(--gradient-gold);
-  color: white;
-  font-size: 0.625rem;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.05em;
-}
-
-.premiumDesc {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  line-height: 1.35;
 }
 
 /* User Profile Mini Card */

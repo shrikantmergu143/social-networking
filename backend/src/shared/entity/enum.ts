@@ -53,8 +53,11 @@ export enum NotificationType {
   LIKE = 'like',
   COMMENT = 'comment',
   FOLLOW = 'follow',
+  FOLLOW_REQUEST = 'follow_request',
+  FOLLOW_ACCEPTED = 'follow_accepted',
   MATCH = 'match',
   MESSAGE = 'message',
+  SUPERLIKE = 'superlike',
   SYSTEM = 'system',
 }
 export enum NotificationTargetType {

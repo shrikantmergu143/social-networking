@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Sparkles, Image as ImageIcon } from 'lucide-react';
 import { StoriesCarousel } from '../stories/StoriesCarousel';
 import { PostCard } from './PostCard';
 import { CreatePostModal } from '../../components/common/CreatePostModal';
+import { CreateStoryModal } from '../../components/common/CreateStoryModal';
 import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { setFeedFilter } from './feedSlice';
+import { replacePosts, setFeedFilter } from './feedSlice';
+import { feedApi } from './feed.api';
+import { message } from '../../app/notification';
 import styles from './FeedPage.module.css';
 
 export const FeedPage: React.FC = () => {
@@ -16,9 +19,27 @@ export const FeedPage: React.FC = () => {
   const following = useAppSelector(state => state.connections.following);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isStoryOpen, setIsStoryOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    feedApi.getPosts()
+      .then(serverPosts => {
+        if (active) dispatch(replacePosts(serverPosts));
+      })
+      .catch(error => {
+        if (active) {
+          message.error(error instanceof Error ? error.message : 'Unable to load posts.');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch]);
 
   // Filter posts based on active tab
-  const filteredPosts = posts.filter(post => {
+  const filteredPosts = posts.filter?.(post => {
     if (activeFilter === 'following') {
       return following.some(f => f.id === post.userId) || post.userId === currentUser?.id;
     }
@@ -31,7 +52,7 @@ export const FeedPage: React.FC = () => {
   return (
     <div className={styles.feedContainer}>
       {/* Stories carousel */}
-      <StoriesCarousel onOpenCreateStory={() => setIsCreateOpen(true)} />
+      <StoriesCarousel onOpenCreateStory={() => setIsStoryOpen(true)} />
 
       {/* Quick create post trigger */}
       <div className={styles.createPostBar} onClick={() => setIsCreateOpen(true)}>
@@ -92,6 +113,7 @@ export const FeedPage: React.FC = () => {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
       />
+      <CreateStoryModal open={isStoryOpen} onClose={() => setIsStoryOpen(false)} />
     </div>
   );
 };

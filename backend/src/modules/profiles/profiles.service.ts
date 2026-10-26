@@ -27,9 +27,12 @@ export class ProfilesService {
       fullName: dto.fullName ?? user.fullName,
       bio: dto.bio ?? user.bio,
       location: dto.location ?? user.location,
+      latitude: dto.latitude ?? user.latitude,
+      longitude: dto.longitude ?? user.longitude,
       pronouns: dto.pronouns ?? user.pronouns,
       relationshipGoal: dto.relationshipGoal ?? user.relationshipGoal,
       avatar: dto.avatar ?? user.avatar,
+      coverImage: dto.coverImage ?? user.coverImage,
     });
     await this.users.save(user);
 

@@ -13,6 +13,7 @@
   flex-direction: column;
   flex: 1;
   position: relative;
+  padding-bottom: 10px;
 }
 
 @media (min-width: 1024px) {
@@ -30,6 +31,8 @@
   margin: 0 auto;
   position: relative;
   justify-content: center;
+  max-height: calc(100vh - 74px);
+  overflow: auto;
 }
 
 .centerStage {

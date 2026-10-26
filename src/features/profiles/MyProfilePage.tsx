@@ -1,92 +1,176 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Settings, MapPin, Sparkles, CheckCircle, Plus } from 'lucide-react';
+import {
+  Edit3,
+  Settings,
+  MapPin,
+  Sparkles,
+  CheckCircle,
+  UsersRound,
+  UserRoundPlus,
+  FileText,
+  BriefcaseBusiness,
+  Check
+} from 'lucide-react';
 import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppButton } from '../../components/common/AppButton';
 import { PostCard } from '../feed/PostCard';
 import { EditProfileDrawer } from './EditProfileDrawer';
-import { useAppSelector } from '../../hooks';
+import { useAppDispatch, useAppSelector } from '../../hooks';
 import { ROUTES } from '../../routes/paths';
 import styles from './ProfilePage.module.css';
+import { ProfileCover } from './ProfileCover';
+import { feedApi } from '../feed/feed.api';
+import { replaceProfilePosts } from '../feed/feedSlice';
+import { replaceFollowers, replaceFollowing } from '../connections/connectionsSlice';
+import { socialApi } from '../../lib/social.api';
+import { message } from '../../app/notification';
 
 export const MyProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const currentUser = useAppSelector(state => state.auth.currentUser);
-  const posts = useAppSelector(state => state.feed.posts);
+  const myPosts = useAppSelector(state => state.feed.profilePosts);
   const following = useAppSelector(state => state.connections.following);
   const followers = useAppSelector(state => state.connections.followers);
 
   const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    let active = true;
+
+    feedApi.getMyPosts()
+      .then(profilePosts => {
+        if (active) dispatch(replaceProfilePosts(profilePosts));
+      })
+      .catch(error => {
+        if (active) message.error(error instanceof Error ? error.message : 'Unable to load your posts.');
+      })
+      .finally(() => {
+        if (active) setIsLoadingPosts(false);
+      });
+
+    socialApi.getFollowing()
+      .then(profiles => { if (active) dispatch(replaceFollowing(profiles)); })
+      .catch(error => {
+        if (active) message.error(error instanceof Error ? error.message : 'Unable to load your following list.');
+      });
+
+    socialApi.getFollowers()
+      .then(profiles => { if (active) dispatch(replaceFollowers(profiles)); })
+      .catch(error => {
+        if (active) message.error(error instanceof Error ? error.message : 'Unable to load your followers list.');
+      });
+
+    return () => { active = false; };
+  }, [currentUser?.id, dispatch]);
 
   if (!currentUser) return null;
 
-  const myPosts = posts.filter(p => p.userId === currentUser?.id);
+  const userPosts = myPosts?.filter?.(post => post.userId === currentUser.id);
 
   return (
-    <div className={styles.profileContainer}>
+    <div className={`${styles.profileContainer} ${styles.myProfileContainer}`}>
       <div className={styles.coverCard}>
-        <img
-          src={currentUser?.coverImage || currentUser?.photos?.[0]}
-          alt="My Cover"
-          className={styles.coverImage}
-        />
+        <ProfileCover src={currentUser.coverImage || currentUser.photos?.[0]} alt="My Cover" />
         <div className={styles.headerBar}>
-          <div className={styles.avatarFloating}>
+          <div className={`${styles.avatarFloating} ${styles.myAvatarFloating}`}>
             <AppAvatar
               src={currentUser?.avatar}
               alt={currentUser?.fullName}
               size={96}
-              isVerified={currentUser?.isVerified}
+              // isVerified={currentUser?.isVerified}
+              className={styles.myProfileAvatar}
             />
           </div>
 
-          <div className={styles.titleRow}>
+          <div >
             <div>
-              <h1 className={styles.profileTitle}>
-                {currentUser?.fullName}, {currentUser?.age}
-                {currentUser?.isVerified && (
-                  <CheckCircle size={22} fill="#38bdf8" color="white" />
+              <div className={styles.titleRow}>
+                <div>
+                  <h1 className={styles.profileTitle}>
+                    {currentUser?.fullName}
+                    {currentUser?.isVerified && (
+                      <span className={styles.verifiedBadge} title="Verified Profile">
+                        <Check size={10} strokeWidth={3} />
+                      </span>
+                    )}
+                  </h1>
+                  <div className={styles.subMeta}>
+                    <span>@{currentUser?.username}</span>
+                  </div>
+                </div>
+                <div className={styles.actionRow}>
+                  <AppButton
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setEditDrawerOpen(true)}
+                    icon={<Edit3 size={16} />}
+                  >
+                    Edit Profile
+                  </AppButton>
+                  <AppButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(ROUTES.SETTINGS)}
+                    icon={<Settings size={16} />}
+                  >
+                    Settings
+                  </AppButton>
+                </div>
+              </div>
+              <div className={styles.profileDetails}>
+                {currentUser?.location && (
+                  <span className={styles.profileDetail}>
+                    <MapPin size={16} /> {currentUser.location}
+                  </span>
                 )}
-              </h1>
-              <div className={styles.subMeta}>
-                <span>@{currentUser?.username}</span>
-                <span>·</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={13} /> {currentUser?.location}
-                </span>
+                {currentUser?.lifestyle?.occupation && (
+                  <span className={styles.profileDetail}>
+                    <BriefcaseBusiness size={16} /> {currentUser.lifestyle.occupation}
+                  </span>
+                )}
                 {currentUser?.pronouns && (
-                  <>
-                    <span>·</span>
-                    <span>{currentUser?.pronouns}</span>
-                  </>
+                  <span className={styles.profileDetail}>{currentUser.pronouns}</span>
                 )}
               </div>
             </div>
-
-            <div className={styles.actionRow}>
-              <AppButton
-                variant="primary"
-                size="sm"
-                onClick={() => setEditDrawerOpen(true)}
-                icon={<Edit3 size={16} />}
-              >
-                Edit Profile
-              </AppButton>
-              <AppButton
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate(ROUTES.SETTINGS)}
-                icon={<Settings size={16} />}
-              >
-                Settings
-              </AppButton>
-            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 20, paddingTop: 8, borderTop: '1px solid var(--border-light)', fontSize: '0.875rem' }}>
-            <span><strong className="tabular-nums">{followers.length * 120 + 20}</strong> <span style={{ color: 'var(--text-secondary)' }}>Followers</span></span>
-            <span><strong className="tabular-nums">{following.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>Following</span></span>
-            <span><strong className="tabular-nums">{myPosts.length}</strong> <span style={{ color: 'var(--text-secondary)' }}>Posts</span></span>
+          <div className={styles.profileStats}>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statButton}`}
+              onClick={() => navigate(ROUTES.FOLLOWERS)}
+              aria-label={`View ${followers?.length} followers`}
+            >
+              <span className={styles.statIcon}><UsersRound size={22} /></span>
+              <span className={styles.statCopy}>
+                <strong className={`${styles.statValue} tabular-nums`}>{followers?.length}</strong>
+                <span className={styles.statLabel}>Followers</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`${styles.statItem} ${styles.statButton}`}
+              onClick={() => navigate(ROUTES.FOLLOWING)}
+              aria-label={`View ${following?.length} following`}
+            >
+              <span className={styles.statIcon}><UserRoundPlus size={22} /></span>
+              <span className={styles.statCopy}>
+                <strong className={`${styles.statValue} tabular-nums`}>{following?.length}</strong>
+                <span className={styles.statLabel}>Following</span>
+              </span>
+            </button>
+            <div className={styles.statItem}>
+              <span className={styles.statIcon}><FileText size={22} /></span>
+              <span className={styles.statCopy}>
+                <strong className={`${styles.statValue} tabular-nums`}>{userPosts?.length}</strong>
+                <span className={styles.statLabel}>Posts</span>
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -198,12 +282,14 @@ export const MyProfilePage: React.FC = () => {
       </div>
 
       {/* My Posts */}
-      <div>
+      <div className='pb-4'>
         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '24px 0 16px', color: 'var(--text-primary)' }}>
-          My Posts ({myPosts.length})
+          My Posts ({userPosts?.length})
         </h3>
-        {myPosts.length > 0 ? (
-          myPosts.map(p => <PostCard key={p.id} post={p} />)
+        {isLoadingPosts ? (
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Loading your posts...</p>
+        ) : userPosts?.length > 0 ? (
+          userPosts?.map(p => <PostCard key={p.id} post={p} />)
         ) : (
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>You haven't posted yet.</p>
         )}

@@ -5,8 +5,12 @@ import { AppAvatar } from '../common/AppAvatar';
 import { AppButton } from '../common/AppButton';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { toggleFollowUser } from '../../features/connections/connectionsSlice';
+import { setProfileFollowRequestPending } from '../../features/discovery/discoverySlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './RightSidebar.module.css';
+import { socialApi } from '../../lib/social.api';
+import { message } from '../../app/notification';
+import { getFollowButtonLabel, isFollowingProfile } from '../../lib/followStatus';
 
 export const RightSidebar: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -15,7 +19,7 @@ export const RightSidebar: React.FC = () => {
   const following = useAppSelector(state => state.connections.following);
 
   // Suggested people who aren't followed yet
-  const suggested = profiles.filter(
+  const suggested = profiles.filter?.(
     p => !following.some(f => f.id === p.id) && p.id !== 'usr_me'
   ).slice(0, 4);
 
@@ -78,7 +82,7 @@ export const RightSidebar: React.FC = () => {
         </div>
         <div className={styles.peopleList}>
           {suggested.map(person => {
-            const isFollowed = following.some(f => f.id === person.id);
+            const isFollowed = isFollowingProfile(person, following);
             return (
               <div key={person.id} className={styles.personRow}>
                 <Link to={ROUTES.PROFILE(person.id)} className={styles.personInfo}>
@@ -101,9 +105,28 @@ export const RightSidebar: React.FC = () => {
                 <AppButton
                   variant={isFollowed ? 'secondary' : 'outline'}
                   size="sm"
-                  onClick={() => dispatch(toggleFollowUser(person))}
+                  onClick={async () => {
+                    try {
+                      if (person.hasPendingFollowRequest && !isFollowed) {
+                        await socialApi.cancelFollowRequest(person.id);
+                        dispatch(setProfileFollowRequestPending({ profileId: person.id, pending: false }));
+                        message.info('Follow request cancelled');
+                        return;
+                      }
+                      const result = await socialApi.setFollow(person.id, !isFollowed);
+                      if (result.requestPending) {
+                        dispatch(setProfileFollowRequestPending({ profileId: person.id, pending: true }));
+                        message.success(`Follow request sent to ${person.fullName}`);
+                        return;
+                      }
+                      dispatch(toggleFollowUser(person));
+                      message.info(isFollowed ? `Unfollowed ${person.fullName}` : `Followed ${person.fullName}`);
+                    } catch (error) {
+                      message.error(error instanceof Error ? error.message : 'Unable to update follow.');
+                    }
+                  }}
                 >
-                  {isFollowed ? 'Following' : 'Follow'}
+                  {getFollowButtonLabel(person, isFollowed)}
                 </AppButton>
               </div>
             );

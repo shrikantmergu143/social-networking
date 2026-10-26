@@ -26,7 +26,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
     styles[size],
     fullWidth ? styles.fullWidth : '',
     className
-  ].filter(Boolean).join(' ');
+  ].filter?.(Boolean).join(' ');
 
   return (
     <button

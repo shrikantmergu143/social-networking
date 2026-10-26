@@ -7,7 +7,9 @@ import { DatingFiltersDrawer } from './DatingFiltersDrawer';
 import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { AppButton } from '../../components/common/AppButton';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { resetDiscoveryQueue, recordSwipe } from './discoverySlice';
+import { resetDiscoveryQueue, recordSwipe, replaceProfiles } from './discoverySlice';
+import { socialApi } from '../../lib/social.api';
+import { message as appMessage } from '../../app/notification';
 import { ROUTES } from '../../routes/paths';
 import styles from './DiscoveryPage.module.css';
 
@@ -20,6 +22,14 @@ export const DiscoveryPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'deck' | 'grid'>('deck');
   const [searchQuery, setSearchQuery] = useState('');
 
+  React.useEffect(() => {
+    let active = true;
+    socialApi.getDiscovery()
+      .then(data => { if (active) dispatch(replaceProfiles(data)); })
+      .catch(error => { if (active) appMessage.error(error instanceof Error ? error.message : 'Unable to load profiles.'); });
+    return () => { active = false; };
+  }, [dispatch]);
+
   // Filter profiles based on:
   // 1. Not current user ('usr_me')
   // 2. Not already processed
@@ -29,7 +39,7 @@ export const DiscoveryPage: React.FC = () => {
   // 6. Verified only if checked
   // 7. Online only if checked
   // 8. Search query matching name, location, interests, or bio
-  const eligibleProfiles = profiles.filter(p => {
+  const eligibleProfiles = profiles.filter?.(p => {
     if (p.id === 'usr_me') return false;
     if (processedIds.includes(p.id)) return false;
 
@@ -279,4 +289,3 @@ export const DiscoveryPage: React.FC = () => {
     </div>
   );
 };
-

@@ -7,10 +7,10 @@ import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { AppConfirmDialog } from '../../components/common/AppConfirmDialog';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { removeMatch, setMatchSearchQuery } from './matchesSlice';
-import { startConversationWithUser } from '../messages/messagesSlice';
 import { ROUTES } from '../../routes/paths';
 import type { UserProfile } from '../../types';
 import styles from './MatchesPage.module.css';
+import { socialApi } from '../../lib/social.api';
 
 export const MatchesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,22 +19,31 @@ export const MatchesPage: React.FC = () => {
 
   const [matchToRemove, setMatchToRemove] = useState<UserProfile | null>(null);
 
-  const filteredMatches = matches.filter(m =>
+  const filteredMatches = matches.filter?.(m =>
     m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleStartChat = (user: UserProfile) => {
-    dispatch(startConversationWithUser({ user }));
-    navigate(ROUTES.MESSAGES);
+  const handleStartChat = async (user: UserProfile) => {
+    try {
+      const conversation = await socialApi.openConversation(user.id);
+      navigate(ROUTES.CONVERSATION(conversation.id));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to start conversation.');
+    }
   };
 
-  const handleConfirmRemove = () => {
+  const handleConfirmRemove = async () => {
     if (matchToRemove) {
-      dispatch(removeMatch(matchToRemove.id));
-      message.info(`Removed match with ${matchToRemove.fullName}`);
-      setMatchToRemove(null);
+      try {
+        await socialApi.removeMatch(matchToRemove.id);
+        dispatch(removeMatch(matchToRemove.id));
+        message.info(`Removed match with ${matchToRemove.fullName}`);
+        setMatchToRemove(null);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : 'Unable to remove match.');
+      }
     }
   };
 

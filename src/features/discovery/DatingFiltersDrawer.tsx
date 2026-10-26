@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Filter, RotateCcw, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { Slider, Switch, Select } from 'antd';
 import { AppDrawer } from '../../components/common/AppDrawer';
 import { AppButton } from '../../components/common/AppButton';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { updateFilters, resetFilters } from './discoverySlice';
 import type { Gender, RelationshipGoal } from '../../types';
+import { socialApi } from '../../lib/social.api';
+import { message } from '../../app/notification';
 
 interface DatingFiltersDrawerProps {
   open: boolean;
@@ -31,17 +33,36 @@ export const DatingFiltersDrawer: React.FC<DatingFiltersDrawerProps> = ({ open, 
   const [localIntentions, setLocalIntentions] = useState<RelationshipGoal[]>(filters.intentions);
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(filters.verifiedOnly);
   const [onlineOnly, setOnlineOnly] = useState<boolean>(filters.onlineOnly);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleApply = () => {
-    dispatch(updateFilters({
+  useEffect(() => {
+    setLocalAgeRange(filters.ageRange);
+    setLocalDistance(filters.maxDistanceKm);
+    setLocalGenders(filters.genderPreference);
+    setLocalIntentions(filters.intentions);
+    setVerifiedOnly(filters.verifiedOnly);
+    setOnlineOnly(filters.onlineOnly);
+  }, [filters]);
+
+  const handleApply = async () => {
+    const nextFilters = {
       ageRange: localAgeRange,
       maxDistanceKm: localDistance,
       genderPreference: localGenders,
       intentions: localIntentions,
       verifiedOnly,
       onlineOnly
-    }));
-    onClose();
+    };
+    setIsSaving(true);
+    try {
+      const saved = await socialApi.updatePreferences(nextFilters);
+      dispatch(updateFilters(saved));
+      onClose();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to save dating preferences.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReset = () => {
@@ -94,7 +115,7 @@ export const DatingFiltersDrawer: React.FC<DatingFiltersDrawerProps> = ({ open, 
                   onClick={() => {
                     if (active) {
                       if (localGenders.length > 1) {
-                        setLocalGenders(localGenders.filter(item => item !== g));
+                        setLocalGenders(localGenders.filter?.(item => item !== g));
                       }
                     } else {
                       setLocalGenders([...localGenders, g]);
@@ -186,7 +207,7 @@ export const DatingFiltersDrawer: React.FC<DatingFiltersDrawerProps> = ({ open, 
                     checked={checked}
                     onChange={() => {
                       if (checked) {
-                        setLocalIntentions(localIntentions.filter(i => i !== goal));
+                        setLocalIntentions(localIntentions.filter?.(i => i !== goal));
                       } else {
                         setLocalIntentions([...localIntentions, goal]);
                       }
@@ -228,7 +249,7 @@ export const DatingFiltersDrawer: React.FC<DatingFiltersDrawerProps> = ({ open, 
 
         {/* Apply CTA */}
         <div style={{ marginTop: 12 }}>
-          <AppButton variant="primary" fullWidth onClick={handleApply}>
+          <AppButton variant="primary" fullWidth onClick={handleApply} loading={isSaving}>
             Apply Filters
           </AppButton>
         </div>

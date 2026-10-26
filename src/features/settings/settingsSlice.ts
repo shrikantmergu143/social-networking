@@ -4,6 +4,7 @@ import { settingsApi, type SettingsPayload } from './services/settings.api';
 
 export interface AppSettings {
   isProfileVisible: boolean;
+  isPrivate: boolean;
   incognitoMode: boolean;
   showOnlineStatus: boolean;
   showDistance: boolean;
@@ -26,6 +27,7 @@ export interface SettingsState extends AppSettings {
 
 const initialState: SettingsState = {
   isProfileVisible: true,
+  isPrivate: false,
   incognitoMode: false,
   showOnlineStatus: true,
   showDistance: true,
@@ -85,7 +87,7 @@ export const settingsSlice = createSlice({
       state: SettingsState,
       action: PayloadAction<{ key: K; value: AppSettings[K] }>
     ) => {
-      state[action.payload.key] = action.payload.value;
+      Object.assign(state, { [action.payload.key]: action.payload.value });
     },
     upgradePremium: (state, action: PayloadAction<'aura_plus' | 'aura_elite'>) => {
       state.isPremium = true;

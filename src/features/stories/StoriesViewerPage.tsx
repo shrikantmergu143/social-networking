@@ -8,6 +8,7 @@ import { markStoryAsViewed } from './storiesSlice';
 import { startConversationWithUser } from '../messages/messagesSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './StoriesViewerPage.module.css';
+import { socialApi } from '../../lib/social.api';
 
 export const StoriesViewerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +53,9 @@ export const StoriesViewerPage: React.FC = () => {
   useEffect(() => {
     if (currentItem) {
       dispatch(markStoryAsViewed(currentItem.id));
+      socialApi.markStoryViewed(currentItem.id).catch(error => {
+        message.error(error instanceof Error ? error.message : 'Unable to save story view.');
+      });
     }
   }, [currentItem, dispatch]);
 
@@ -83,17 +87,20 @@ export const StoriesViewerPage: React.FC = () => {
     }
   };
 
-  const handleSendReply = (e: React.FormEvent) => {
+  const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim()) return;
 
     const targetUser = profiles.find(p => p.id === currentStoryUser.userId);
     if (targetUser) {
-      dispatch(startConversationWithUser({
-        user: targetUser,
-        initialMessage: `Replied to your story: "${replyText.trim()}"`
-      }));
-      message.success(`Reply sent to ${currentStoryUser.userName}`);
+      try {
+        const { id } = await socialApi.openConversation(targetUser.id);
+        await socialApi.sendMessage(id, { text: `Replied to your story: "${replyText.trim()}"` });
+        message.success(`Reply sent to ${currentStoryUser.userName}`);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : 'Unable to send story reply.');
+        return;
+      }
     } else {
       message.success(`Reply sent to ${currentStoryUser.userName}`);
     }

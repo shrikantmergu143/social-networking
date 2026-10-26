@@ -8,13 +8,19 @@ import { ConversationParticipant } from '../conversations/entities/conversation-
 
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { User } from '../users/entities/user.entity';
+import { UserFollow } from '../users/entities/user-follow.entity';
 
 @Module({
   imports: [
+    NotificationsModule,
     TypeOrmModule.forFeature([
       Conversation,
       ConversationParticipant,
       ChatMessage,
+      User,
+      UserFollow,
     ]),
   ],
   controllers: [MessagesController],

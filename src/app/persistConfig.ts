@@ -39,8 +39,8 @@ const getStorage = () => {
 };
 
 export const persistConfig = {
-  key: 'aura_root_v1',
-  version: 1,
+  key: 'aura_root_v2',
+  version: 2,
   storage: getStorage(),
   whitelist: [
     'auth',

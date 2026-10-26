@@ -47,6 +47,8 @@ export interface UserProfile {
   relationshipGoal: RelationshipGoal;
   lifestyle: Lifestyle;
   isVerified: boolean;
+  isPrivate?: boolean;
+  hasPendingFollowRequest?: boolean;
   isOnline: boolean;
   lastActive: string;
   followerCount: number;
@@ -74,6 +76,7 @@ export interface PostComment {
   createdAt: string;
   likesCount: number;
   isLiked?: boolean;
+  parentCommentId?: string;
   replies?: PostComment[];
 }
 
@@ -140,7 +143,7 @@ export interface Conversation {
   updatedAt: string;
 }
 
-export type NotificationType = 'like' | 'comment' | 'follow' | 'match' | 'message' | 'system';
+export type NotificationType = 'like' | 'comment' | 'follow' | 'follow_request' | 'follow_accepted' | 'match' | 'message' | 'superlike' | 'system';
 
 export interface AppNotification {
   id: string;

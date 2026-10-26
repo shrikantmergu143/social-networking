@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { UserProfile } from '../../types';
-import { CURRENT_USER } from '../../mocks/users';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -11,10 +10,9 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-  // Pre-load in authenticated state with rich demo profile as confirmed in Phase 1
-  isAuthenticated: true,
-  currentUser: CURRENT_USER,
-  authToken: 'demo_session_token_alexmorgan',
+  isAuthenticated: false,
+  currentUser: null,
+  authToken: null,
   isLoading: false,
   error: null,
 };

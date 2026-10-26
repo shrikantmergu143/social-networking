@@ -19,6 +19,8 @@ import { useAppDispatch, useAppSelector } from '../../hooks';
 import { logout } from '../../features/auth/authSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './AppHeader.module.css';
+import { authApi } from '../../features/auth/services/auth.api';
+import { message } from '../../app/notification';
 
 interface AppHeaderProps {
   onOpenCreatePost?: () => void;
@@ -29,7 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenCreatePost }) => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(state => state.auth.currentUser);
   const unreadNotifs = useAppSelector(state =>
-    state.notifications.notifications.filter(n => !n.isRead).length
+    state.notifications.notifications.filter?.(n => !n.isRead).length
   );
   const [searchVal, setSearchVal] = useState('');
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -42,7 +44,12 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ onOpenCreatePost }) => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      message.warning(error instanceof Error ? `Signed out locally; server session could not be closed: ${error.message}` : 'Signed out locally; server session could not be closed.');
+    }
     dispatch(logout());
     navigate(ROUTES.LANDING);
   };

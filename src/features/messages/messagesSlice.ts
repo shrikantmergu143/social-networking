@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Conversation, ChatMessage, UserProfile } from '../../types';
-import { MOCK_CONVERSATIONS, MOCK_MESSAGES_MAP } from '../../mocks/conversations';
 
 export interface MessagesState {
   conversations: Conversation[];
@@ -10,9 +9,9 @@ export interface MessagesState {
 }
 
 const initialState: MessagesState = {
-  conversations: MOCK_CONVERSATIONS,
-  messages: MOCK_MESSAGES_MAP,
-  activeConversationId: 'conv_1',
+  conversations: [],
+  messages: {},
+  activeConversationId: null,
   searchFilter: ''
 };
 
@@ -20,6 +19,34 @@ export const messagesSlice = createSlice({
   name: 'messages',
   initialState,
   reducers: {
+    replaceConversations: (state, action: PayloadAction<Conversation[]>) => {
+      state.conversations = action.payload;
+      if (!state.activeConversationId && action.payload.length) {
+        state.activeConversationId = action.payload[0].id;
+      }
+    },
+    setConversationMessages: (state, action: PayloadAction<{ conversationId: string; messages: ChatMessage[] }>) => {
+      state.messages[action.payload.conversationId] = action.payload.messages;
+    },
+    appendServerMessage: (state, action: PayloadAction<ChatMessage>) => {
+      const { conversationId } = action.payload;
+      state.messages[conversationId] ||= [];
+      if (!state.messages[conversationId].some(message => message.id === action.payload.id)) {
+        state.messages[conversationId].push(action.payload);
+      }
+      const conversation = state.conversations.find(item => item.id === conversationId);
+      if (conversation) {
+        conversation.lastMessage = action.payload;
+        conversation.updatedAt = action.payload.timestamp;
+      }
+    },
+    upsertConversation: (state, action: PayloadAction<Conversation>) => {
+      const index = state.conversations.findIndex(item => item.id === action.payload.id);
+      if (index < 0) state.conversations.unshift(action.payload);
+      else state.conversations[index] = action.payload;
+      state.activeConversationId = action.payload.id;
+      state.messages[action.payload.id] ||= [];
+    },
     setActiveConversation: (state, action: PayloadAction<string | null>) => {
       state.activeConversationId = action.payload;
       if (action.payload) {
@@ -158,6 +185,10 @@ export const messagesSlice = createSlice({
 });
 
 export const {
+  replaceConversations,
+  setConversationMessages,
+  appendServerMessage,
+  upsertConversation,
   setActiveConversation,
   sendMessage,
   receiveMessage,

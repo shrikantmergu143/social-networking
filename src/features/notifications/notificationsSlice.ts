@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { AppNotification } from '../../types';
-import { MOCK_NOTIFICATIONS } from '../../mocks/conversations';
 
 export interface NotificationsState {
   notifications: AppNotification[];
@@ -8,7 +7,7 @@ export interface NotificationsState {
 }
 
 const initialState: NotificationsState = {
-  notifications: MOCK_NOTIFICATIONS,
+  notifications: [],
   filter: 'all'
 };
 
@@ -16,6 +15,9 @@ export const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
   reducers: {
+    replaceNotifications: (state, action: PayloadAction<AppNotification[]>) => {
+      state.notifications = action.payload;
+    },
     markAsRead: (state, action: PayloadAction<string>) => {
       const notif = state.notifications.find(n => n.id === action.payload);
       if (notif) notif.isRead = true;
@@ -34,6 +36,7 @@ export const notificationsSlice = createSlice({
 
 export const {
   markAsRead,
+  replaceNotifications,
   markAllAsRead,
   addNotification,
   setNotificationsFilter

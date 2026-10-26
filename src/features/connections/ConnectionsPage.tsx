@@ -6,9 +6,12 @@ import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppButton } from '../../components/common/AppButton';
 import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { toggleFollowUser, removeFollower, acceptFollowRequest, declineFollowRequest } from './connectionsSlice';
+import { toggleFollowUser, removeFollower, acceptFollowRequest, declineFollowRequest, replacePendingRequests } from './connectionsSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './ConnectionsPage.module.css';
+import { socialApi } from '../../lib/social.api';
+import { setProfileFollowRequestPending } from '../discovery/discoverySlice';
+import { getFollowButtonLabel, isFollowingProfile } from '../../lib/followStatus';
 
 export const ConnectionsPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -29,7 +32,7 @@ export const ConnectionsPage: React.FC = () => {
   const [search, setSearch] = useState('');
 
   // Suggested = profiles not yet in following and not 'usr_me'
-  const suggested = profiles.filter(
+  const suggested = profiles.filter?.(
     p => p.id !== 'usr_me' && !following.some(f => f.id === p.id)
   );
 
@@ -43,7 +46,7 @@ export const ConnectionsPage: React.FC = () => {
       : suggested;
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(u =>
+      list = list.filter?.(u =>
         u.fullName.toLowerCase().includes(q) ||
         u.username.toLowerCase().includes(q) ||
         u.location.toLowerCase().includes(q)
@@ -114,7 +117,7 @@ export const ConnectionsPage: React.FC = () => {
       {list.length > 0 ? (
         <div>
           {list.map(user => {
-            const isFollowed = following.some(f => f.id === user.id);
+            const isFollowed = isFollowingProfile(user, following);
             return (
               <div key={user.id} className={styles.userCard}>
                 <Link to={ROUTES.PROFILE(user.id)} className={styles.userMeta}>
@@ -142,9 +145,15 @@ export const ConnectionsPage: React.FC = () => {
                       <AppButton
                         variant="primary"
                         size="sm"
-                        onClick={() => {
-                          dispatch(acceptFollowRequest(user.id));
-                          message.success(`Accepted follow request from ${user.fullName}`);
+                        onClick={async () => {
+                          try {
+                            await socialApi.acceptFollowRequest(user.id);
+                            dispatch(acceptFollowRequest(user.id));
+                            dispatch(replacePendingRequests(await socialApi.getFollowRequests()));
+                            message.success(`Accepted follow request from ${user.fullName}`);
+                          } catch (error) {
+                            message.error(error instanceof Error ? error.message : 'Unable to accept follow request.');
+                          }
                         }}
                       >
                         Accept
@@ -152,9 +161,14 @@ export const ConnectionsPage: React.FC = () => {
                       <AppButton
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          dispatch(declineFollowRequest(user.id));
-                          message.info(`Declined follow request`);
+                        onClick={async () => {
+                          try {
+                            await socialApi.declineFollowRequest(user.id);
+                            dispatch(declineFollowRequest(user.id));
+                            message.info('Declined follow request');
+                          } catch (error) {
+                            message.error(error instanceof Error ? error.message : 'Unable to decline follow request.');
+                          }
                         }}
                       >
                         Decline
@@ -165,22 +179,43 @@ export const ConnectionsPage: React.FC = () => {
                       <AppButton
                         variant={isFollowed ? 'secondary' : 'outline'}
                         size="sm"
-                        onClick={() => {
-                          dispatch(toggleFollowUser(user));
-                          message.info(isFollowed ? `Unfollowed ${user.fullName}` : `Followed ${user.fullName}`);
+                        onClick={async () => {
+                          try {
+                            if (user.hasPendingFollowRequest && !isFollowed) {
+                              await socialApi.cancelFollowRequest(user.id);
+                              dispatch(setProfileFollowRequestPending({ profileId: user.id, pending: false }));
+                              message.info('Follow request cancelled');
+                              return;
+                            }
+                            const result = await socialApi.setFollow(user.id, !isFollowed);
+                            if (!result.requestPending) {
+                              dispatch(toggleFollowUser(user));
+                              message.info(isFollowed ? `Unfollowed ${user.fullName}` : `Followed ${user.fullName}`);
+                            } else {
+                              dispatch(setProfileFollowRequestPending({ profileId: user.id, pending: true }));
+                              message.success(`Follow request sent to ${user.fullName}`);
+                            }
+                          } catch (error) {
+                            message.error(error instanceof Error ? error.message : 'Unable to update follow.');
+                          }
                         }}
                         icon={isFollowed ? <UserCheck size={15} /> : <UserPlus size={15} />}
                       >
-                        {isFollowed ? 'Following' : 'Follow'}
+                        {getFollowButtonLabel(user, isFollowed)}
                       </AppButton>
 
                       {activeTab === 'followers' && (
                         <AppButton
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            dispatch(removeFollower(user.id));
-                            message.info(`Removed follower ${user.fullName}`);
+                          onClick={async () => {
+                            try {
+                              await socialApi.removeFollower(user.id);
+                              dispatch(removeFollower(user.id));
+                              message.info(`Removed follower ${user.fullName}`);
+                            } catch (error) {
+                              message.error(error instanceof Error ? error.message : 'Unable to remove follower.');
+                            }
                           }}
                         >
                           Remove

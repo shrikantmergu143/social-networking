@@ -11,16 +11,19 @@ import {
   Send,
   Trash2,
   Flag,
-  Copy
+  Copy,
+  Pencil
 } from 'lucide-react';
 import { Dropdown, type MenuProps } from 'antd';
 import { message } from '../../app/notification';
 import { AppAvatar } from '../../components/common/AppAvatar';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { toggleLikePost, toggleSavePost, addComment, deletePost } from './feedSlice';
+import { addComment, deletePost, setCommentLike, setPostLikeState, setPostSavedState } from './feedSlice';
 import { ROUTES } from '../../routes/paths';
 import type { FeedPost, PostComment } from '../../types';
 import styles from './PostCard.module.css';
+import { feedApi } from './feed.api';
+import { CreatePostModal } from '../../components/common/CreatePostModal';
 
 interface PostCardProps {
   post: FeedPost;
@@ -34,7 +37,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<{ id: string; userName: string } | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'like' | 'save' | 'delete' | 'comment' | null>(null);
 
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -77,13 +82,31 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
 
   const isMyPost = post.userId === currentUser?.id;
 
-  const handleLike = () => {
-    dispatch(toggleLikePost(post.id));
+  const handleLike = async () => {
+    if (pendingAction) return;
+    setPendingAction('like');
+    try {
+      const result = await feedApi.setPostLike(post.id, !post.isLiked);
+      dispatch(setPostLikeState({ postId: post.id, ...result }));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to update like.');
+    } finally {
+      setPendingAction(null);
+    }
   };
 
-  const handleSave = () => {
-    dispatch(toggleSavePost(post.id));
-    message.success(post.isSaved ? 'Removed from saved items' : 'Saved to your bookmarks');
+  const handleSave = async () => {
+    if (pendingAction) return;
+    setPendingAction('save');
+    try {
+      const result = await feedApi.setPostSaved(post.id, !post.isSaved);
+      dispatch(setPostSavedState({ postId: post.id, ...result }));
+      message.success(result.isSaved ? 'Saved to your bookmarks' : 'Removed from saved items');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to update saved post.');
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const handleShare = () => {
@@ -91,25 +114,52 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     message.success('Post link copied to clipboard!');
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || pendingAction) return;
 
-    const newComment: PostComment = {
-      id: `c_${Date.now()}`,
-      postId: post.id,
-      userId: currentUser?.id || 'usr_me',
-      userName: currentUser?.fullName || 'Alex Morgan',
-      userAvatar: currentUser?.avatar || '',
-      userVerified: currentUser?.isVerified || true,
-      text: replyTo ? `@${replyTo} ${commentText.trim()}` : commentText.trim(),
-      createdAt: 'Just now',
-      likesCount: 0
-    };
+    setPendingAction('comment');
+    try {
+      const comment: PostComment = await feedApi.createComment({
+        postId: post.id,
+        text: commentText.trim(),
+        ...(replyTo ? { parentCommentId: replyTo.id } : {})
+      });
+      dispatch(addComment({ postId: post.id, comment }));
+      setCommentText('');
+      setReplyTo(null);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to add comment.');
+    } finally {
+      setPendingAction(null);
+    }
+  };
 
-    dispatch(addComment({ postId: post.id, comment: newComment }));
-    setCommentText('');
-    setReplyTo(null);
+  const handleDelete = async () => {
+    if (pendingAction) return;
+    setPendingAction('delete');
+    try {
+      await feedApi.deletePost(post.id);
+      dispatch(deletePost(post.id));
+      message.info('Post deleted');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to delete post.');
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleCommentLike = async (comment: PostComment) => {
+    try {
+      const result = await feedApi.setCommentLike(comment.id, !comment.isLiked);
+      dispatch(setCommentLike({
+        postId: post.id,
+        commentId: comment.id,
+        ...result,
+      }));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to update comment like.');
+    }
   };
 
   const moreMenuItems: MenuProps['items'] = [
@@ -120,14 +170,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       onClick: handleShare
     },
     ...(isMyPost ? [{
+      key: 'edit',
+      label: 'Edit Post',
+      icon: <Pencil size={14} />,
+      onClick: () => setIsEditOpen(true)
+    }, {
       key: 'delete',
       label: 'Delete Post',
       icon: <Trash2 size={14} />,
       danger: true,
-      onClick: () => {
-        dispatch(deletePost(post.id));
-        message.info('Post deleted');
-      }
+      onClick: handleDelete
     }] : [{
       key: 'report',
       label: 'Report post',
@@ -304,8 +356,16 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                         <span>{c.createdAt}</span>
                         <button
                           type="button"
+                          onClick={() => void handleCommentLike(c)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: c.isLiked ? 'var(--primary)' : 'inherit' }}
+                          aria-label={c.isLiked ? 'Unlike comment' : 'Like comment'}
+                        >
+                          <Heart size={12} fill={c.isLiked ? 'currentColor' : 'none'} /> {c.likesCount}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
-                            setReplyTo(c.userName);
+                            setReplyTo({ id: c.id, userName: c.userName });
                           }}
                           style={{ color: 'var(--primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
                         >
@@ -328,7 +388,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
                           <div className={styles.commentBubble}>
                             <div className={styles.commentAuthor}>{r.userName}</div>
                             <div>{r.text}</div>
-                            <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{r.createdAt}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, color: 'var(--text-secondary)' }}>
+                              <span>{r.createdAt}</span>
+                              <button
+                                type="button"
+                                onClick={() => void handleCommentLike(r)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', color: r.isLiked ? 'var(--primary)' : 'inherit' }}
+                                aria-label={r.isLiked ? 'Unlike reply' : 'Like reply'}
+                              >
+                                <Heart size={11} fill={r.isLiked ? 'currentColor' : 'none'} /> {r.likesCount}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -349,14 +419,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
-              placeholder={replyTo ? `Replying to @${replyTo}...` : "Write a comment..."}
+              placeholder={replyTo ? `Replying to @${replyTo.userName}...` : "Write a comment..."}
               className={styles.commentInput}
+              disabled={pendingAction === 'comment'}
             />
-            <button type="submit" className={styles.commentSendBtn} aria-label="Send comment">
+            <button
+              type="submit"
+              className={styles.commentSendBtn}
+              aria-label="Send comment"
+              disabled={pendingAction === 'comment'}
+            >
               <Send size={14} />
             </button>
           </form>
         </div>
+      )}
+      {isEditOpen && (
+        <CreatePostModal open onClose={() => setIsEditOpen(false)} post={post} />
       )}
     </article>
   );

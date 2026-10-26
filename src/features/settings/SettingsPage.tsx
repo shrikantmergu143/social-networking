@@ -23,6 +23,7 @@ import { fetchSettings, requestVerification, saveCredentials, saveSetting, updat
 import { logout, updateCurrentUserProfile } from '../auth/authSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './SettingsPage.module.css';
+import { authApi } from '../auth/services/auth.api';
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export const SettingsPage: React.FC = () => {
     setCredentialDraft({ email: settings?.credentials?.email, phone: settings?.credentials?.phone });
   }, [settings?.credentials?.email, settings?.credentials?.phone]);
 
-  const handleToggle = (key: 'isProfileVisible' | 'incognitoMode' | 'showOnlineStatus' | 'pushNotifications' | 'matchAlerts' | 'messageAlerts', value: boolean) => {
+  const handleToggle = (key: 'isProfileVisible' | 'isPrivate' | 'incognitoMode' | 'showOnlineStatus' | 'pushNotifications' | 'matchAlerts' | 'messageAlerts', value: boolean) => {
     dispatch(updateSetting({ key, value }));
     void dispatch(saveSetting({ key, value })).unwrap()
       .then(() => message.success('Setting updated'))
@@ -67,7 +68,12 @@ export const SettingsPage: React.FC = () => {
     } catch (error) { message.error(error as string); }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch (error) {
+      message.warning(error instanceof Error ? `Signed out locally; server session could not be closed: ${error.message}` : 'Signed out locally; server session could not be closed.');
+    }
     dispatch(logout());
     message.info('Logged out of Aura');
     navigate(ROUTES.LANDING);
@@ -162,6 +168,17 @@ export const SettingsPage: React.FC = () => {
       <div className={styles.sectionCard}>
         <div className={styles.sectionHeader}>
           <Eye size={18} color="var(--primary)" /> Privacy & Discovery Visibility
+        </div>
+
+        <div className={styles.settingRow}>
+          <div>
+            <div className={styles.settingLabel}>Private Profile</div>
+            <div className={styles.settingDesc}>Approve follow requests before people can see your posts or message you</div>
+          </div>
+          <Switch
+            checked={settings.isPrivate}
+            onChange={(val) => handleToggle('isPrivate', val)}
+          />
         </div>
 
         <div className={styles.settingRow}>

@@ -24,7 +24,7 @@ async function bootstrap() {
   )
     .split(',')
     .map((origin) => origin.trim())
-    .filter(Boolean);
+    .filter?.(Boolean);
 
   app.enableCors({
     origin: (origin, callback) => {

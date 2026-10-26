@@ -8,14 +8,20 @@ import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { unblockUser } from '../connections/connectionsSlice';
 import { ROUTES } from '../../routes/paths';
+import { socialApi } from '../../lib/social.api';
 
 export const BlockedUsersPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const blockedUsers = useAppSelector(state => state.connections.blockedUsers);
 
-  const handleUnblock = (id: string, name: string) => {
-    dispatch(unblockUser(id));
-    message.success(`Unblocked ${name}`);
+  const handleUnblock = async (id: string, name: string) => {
+    try {
+      await socialApi.setBlocked(id, false);
+      dispatch(unblockUser(id));
+      message.success(`Unblocked ${name}`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to unblock user.');
+    }
   };
 
   return (

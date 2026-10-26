@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Delete,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -35,5 +36,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() req: AuthRequest) {
     return this.authService.getUserDetails(req.user.id);
+  }
+
+  @Delete('session')
+  @UseGuards(JwtAuthGuard)
+  logout(@Req() req: AuthRequest) {
+    return this.authService.logout(req.user.id);
   }
 }

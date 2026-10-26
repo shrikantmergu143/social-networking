@@ -2,6 +2,7 @@ import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
 
 export class UpdateSettingsDto {
   @IsOptional() @IsBoolean() isProfileVisible?: boolean;
+  @IsOptional() @IsBoolean() isPrivate?: boolean;
   @IsOptional() @IsBoolean() incognitoMode?: boolean;
   @IsOptional() @IsBoolean() showOnlineStatus?: boolean;
   @IsOptional() @IsBoolean() showDistance?: boolean;

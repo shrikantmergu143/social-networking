@@ -9,6 +9,11 @@ import { useAppDispatch, useAppSelector, useDebounce } from '../../hooks';
 import { toggleFollowUser } from '../connections/connectionsSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './SearchPage.module.css';
+import { socialApi } from '../../lib/social.api';
+import { message } from '../../app/notification';
+import type { UserProfile } from '../../types';
+import { setProfileFollowRequestPending } from '../discovery/discoverySlice';
+import { getFollowButtonLabel, isFollowingProfile } from '../../lib/followStatus';
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,10 +26,10 @@ export const SearchPage: React.FC = () => {
   const [recentSearches, setRecentSearches] = useState<string[]>([
     'Elena', 'Ceramics', 'DesignSystems', 'Maya Lin', 'Sourdough'
   ]);
+  const [matchedUsers, setMatchedUsers] = useState<UserProfile[]>([]);
 
   const debouncedQuery = useDebounce(query, 250);
 
-  const profiles = useAppSelector(state => state.discovery.profiles);
   const posts = useAppSelector(state => state.feed.posts);
   const following = useAppSelector(state => state.connections.following);
 
@@ -40,17 +45,20 @@ export const SearchPage: React.FC = () => {
   const q = debouncedQuery.toLowerCase().trim();
 
   // Search Results
-  const matchedUsers = q
-    ? profiles.filter(p =>
-        p.fullName.toLowerCase().includes(q) ||
-        p.username.toLowerCase().includes(q) ||
-        p.bio.toLowerCase().includes(q) ||
-        p.interests.some(i => i.toLowerCase().includes(q))
-      )
-    : [];
+  useEffect(() => {
+    if (q.length < 2) {
+      setMatchedUsers([]);
+      return;
+    }
+    let active = true;
+    socialApi.searchUsers(q)
+      .then(users => { if (active) setMatchedUsers(users); })
+      .catch(error => { if (active) message.error(error instanceof Error ? error.message : 'Unable to search people.'); });
+    return () => { active = false; };
+  }, [q]);
 
   const matchedPosts = q
-    ? posts.filter(p =>
+    ? posts.filter?.(p =>
         p.caption.toLowerCase().includes(q) ||
         p.author.name.toLowerCase().includes(q) ||
         p.tags.some(t => t.toLowerCase().includes(q))
@@ -58,8 +66,8 @@ export const SearchPage: React.FC = () => {
     : [];
 
   const matchedTags = q
-    ? ['Design', 'Ceramics', 'Coffee', 'FilmPhotography', 'Architecture', 'Sourdough', 'Synths', 'Music', 'Wine']
-        .filter(t => t.toLowerCase().includes(q))
+    ? [...new Set(posts.flatMap(post => post.tags))]
+        .filter?.(t => t.toLowerCase().includes(q))
     : [];
 
   const handleClearHistory = () => {
@@ -193,7 +201,7 @@ export const SearchPage: React.FC = () => {
                 People
               </div>
               {matchedUsers.map(user => {
-                const isFollowed = following.some(f => f.id === user.id);
+                const isFollowed = isFollowingProfile(user, following);
                 return (
                   <div key={user.id} className={styles.userCard}>
                     <Link to={ROUTES.PROFILE(user.id)} className={styles.userLeft}>
@@ -217,9 +225,34 @@ export const SearchPage: React.FC = () => {
                     <AppButton
                       variant={isFollowed ? 'secondary' : 'outline'}
                       size="sm"
-                      onClick={() => dispatch(toggleFollowUser(user))}
+                      onClick={async () => {
+                        try {
+                          if (user.hasPendingFollowRequest && !isFollowed) {
+                            await socialApi.cancelFollowRequest(user.id);
+                            dispatch(setProfileFollowRequestPending({ profileId: user.id, pending: false }));
+                            setMatchedUsers(current => current.map(profile => profile.id === user.id
+                              ? { ...profile, hasPendingFollowRequest: false }
+                              : profile));
+                            message.info('Follow request cancelled');
+                            return;
+                          }
+                          const result = await socialApi.setFollow(user.id, !isFollowed);
+                          if (result.requestPending) {
+                            dispatch(setProfileFollowRequestPending({ profileId: user.id, pending: true }));
+                            message.success(`Follow request sent to ${user.fullName}`);
+                            setMatchedUsers(current => current.map(profile => profile.id === user.id
+                              ? { ...profile, hasPendingFollowRequest: true }
+                              : profile));
+                            return;
+                          }
+                          dispatch(toggleFollowUser(user));
+                          message.info(isFollowed ? `Unfollowed ${user.fullName}` : `Followed ${user.fullName}`);
+                        } catch (error) {
+                          message.error(error instanceof Error ? error.message : 'Unable to update follow.');
+                        }
+                      }}
                     >
-                      {isFollowed ? 'Following' : 'Follow'}
+                      {getFollowButtonLabel(user, isFollowed)}
                     </AppButton>
                   </div>
                 );

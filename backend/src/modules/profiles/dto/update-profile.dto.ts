@@ -5,6 +5,9 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsNumber,
+  Min,
+  Max,
   ValidateNested,
 } from 'class-validator';
 import { RelationshipGoal } from 'src/shared/entity/enum';
@@ -23,6 +26,11 @@ export class UpdateProfileDto {
   @IsOptional() @IsString() fullName?: string;
   @IsOptional() @IsString() bio?: string;
   @IsOptional() @IsString() location?: string;
+  @IsOptional() @IsNumber() @Min(-90) @Max(90) latitude?: number;
+  @IsOptional() @IsNumber() @Min(-180) @Max(180) longitude?: number;
+  @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_tld: false })
+  coverImage?: string;
   @IsOptional() @IsString() pronouns?: string;
   @IsOptional() @IsEnum(RelationshipGoal) relationshipGoal?: RelationshipGoal;
   @IsOptional()

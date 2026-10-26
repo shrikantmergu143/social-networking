@@ -1,86 +1,71 @@
-import React, { useState } from 'react';
-import { Image as ImageIcon, X, Globe, Users, Lock, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { Select } from 'antd';
 import { AppModal } from '../common/AppModal';
 import { AppButton } from '../common/AppButton';
 import { AppAvatar } from '../common/AppAvatar';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { createPost } from '../../features/feed/feedSlice';
+import { createPost, updatePost } from '../../features/feed/feedSlice';
 import type { FeedPost } from '../../types';
+import { AppUpload } from './AppUpload';
+import { feedApi, type PostPayload } from '../../features/feed/feed.api';
+import { message } from '../../app/notification';
 
 interface CreatePostModalProps {
   open: boolean;
   onClose: () => void;
+  post?: FeedPost;
 }
 
-export const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose }) => {
+export const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose, post }) => {
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(state => state.auth.currentUser);
 
   const [caption, setCaption] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('Life');
   const [visibility, setVisibility] = useState<'public' | 'connections' | 'close_friends'>('public');
-  const [imageUrls, setImageUrls] = useState<string[]>([
-    'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1000&q=80'
-  ]);
-  const [customImageInput, setCustomImageInput] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const presetImages = [
-    'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=80',
-    'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1000&q=80'
-  ];
+  useEffect(() => {
+    if (!open) return;
+    setCaption(post?.caption ?? '');
+    setSelectedTag(post ? post.tags[0] ?? '' : 'Life');
+    setVisibility(post?.visibility ?? 'public');
+    setImageUrls(post?.images ?? []);
+  }, [open, post]);
 
-  const handleAddImage = (url: string) => {
-    if (url && !imageUrls.includes(url)) {
-      setImageUrls([...imageUrls, url]);
-      setCustomImageInput('');
-      setShowImageInput(false);
+  const handleRemoveImage = (index: number) => {
+    setImageUrls(urls => urls.filter?.((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if ((!caption.trim() && imageUrls.length === 0) || isSubmitting) return;
+
+    const payload: PostPayload = {
+      caption: caption.trim(),
+      images: imageUrls,
+      tags: selectedTag ? [selectedTag] : [],
+      visibility
+    };
+
+    setIsSubmitting(true);
+    try {
+      const savedPost = post
+        ? await feedApi.updatePost(post.id, payload)
+        : await feedApi.createPost(payload);
+      dispatch(post ? updatePost(savedPost) : createPost(savedPost));
+      onClose();
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to save this post.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImageUrls(imageUrls.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!caption.trim() && imageUrls.length === 0) return;
-
-    const newPost: FeedPost = {
-      id: `post_${Date.now()}`,
-      userId: currentUser?.id || 'usr_me',
-      author: {
-        id: currentUser?.id || 'usr_me',
-        name: currentUser?.fullName || 'Alex Morgan',
-        username: currentUser?.username || 'alexmorgan',
-        avatar: currentUser?.avatar || '',
-        isVerified: currentUser?.isVerified || true,
-        location: currentUser?.location || 'San Francisco, CA'
-      },
-      caption: caption.trim(),
-      images: imageUrls,
-      likesCount: 0,
-      commentsCount: 0,
-      sharesCount: 0,
-      createdAt: 'Just now',
-      isLiked: false,
-      isSaved: false,
-      tags: [selectedTag],
-      visibility,
-      comments: []
-    };
-
-    dispatch(createPost(newPost));
-    setCaption('');
-    onClose();
-  };
-
   return (
-    <AppModal open={open} onCancel={onClose} width={540} title="Create Post">
+    <AppModal open={open} onCancel={onClose} width={540} title={post ? 'Edit Post' : 'Create Post'}>
       <form onSubmit={handleSubmit} style={{ paddingTop: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <AppAvatar
@@ -111,6 +96,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose 
                 onChange={setSelectedTag}
                 style={{ width: 110 }}
                 options={[
+                  { value: '', label: 'No tag' },
                   { value: 'Life', label: '#Life' },
                   { value: 'Design', label: '#Design' },
                   { value: 'Coffee', label: '#Coffee' },
@@ -177,100 +163,31 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ open, onClose 
           </div>
         )}
 
-        {/* Add photo bar */}
-        <div style={{
-          padding: '12px 16px',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-          background: 'var(--surface-subtle)'
-        }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Add media to your post
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              type="button"
-              onClick={() => setShowImageInput(!showImageInput)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-full)',
-                background: 'white',
-                border: '1px solid var(--border)',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'var(--primary)'
-              }}
-            >
-              <ImageIcon size={16} /> Choose Photo
-            </button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, alignItems: 'start', marginBottom: 16 }}>
+          <AppUpload
+            value={imageUrls}
+            onChange={value => setImageUrls(Array.isArray(value) ? value : value ? [value] : [])}
+            multiple
+            type="post"
+            maxCount={6}
+            showUploadList={false}
+          />
+          <div style={{ fontSize: '0.75rem', color: '#666', marginTop: 4 }}>
+            JPG, PNG, or WebP · max 5 MB each · up to 6 photos
           </div>
         </div>
 
-        {showImageInput && (
-          <div style={{ marginBottom: 16, padding: 12, background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)' }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8 }}>Select from showcase photo assets:</div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 10 }}>
-              {presetImages.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  alt={`preset-${i}`}
-                  onClick={() => handleAddImage(img)}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    objectFit: 'cover',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    border: '2px solid transparent'
-                  }}
-                />
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                type="text"
-                placeholder="Or paste image URL..."
-                value={customImageInput}
-                onChange={(e) => setCustomImageInput(e.target.value)}
-                style={{
-                  flex: 1,
-                  height: 36,
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border)',
-                  padding: '0 8px',
-                  fontSize: '0.8125rem'
-                }}
-              />
-              <AppButton
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => handleAddImage(customImageInput)}
-              >
-                Add
-              </AppButton>
-            </div>
-          </div>
-        )}
-
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <AppButton type="button" variant="ghost" onClick={onClose}>
+          <AppButton type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </AppButton>
           <AppButton
             type="submit"
             variant="primary"
             disabled={!caption.trim() && imageUrls.length === 0}
+            loading={isSubmitting}
           >
-            Publish Post
+            {post ? 'Save Changes' : 'Publish Post'}
           </AppButton>
         </div>
       </form>

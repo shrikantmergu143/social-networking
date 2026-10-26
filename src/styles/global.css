@@ -134,3 +134,4 @@ ul, ol {
   color: var(--text-tertiary);
   user-select: none;
 }
+.hidden{display: none;}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Flag, CheckCircle, ShieldAlert } from 'lucide-react';
 import { message } from '../../app/notification';
@@ -7,6 +7,7 @@ import { AppAvatar } from '../../components/common/AppAvatar';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { blockUser } from '../connections/connectionsSlice';
 import { ROUTES } from '../../routes/paths';
+import { socialApi } from '../../lib/social.api';
 
 const REPORT_REASONS = [
   'Inappropriate or explicit photos',
@@ -23,20 +24,39 @@ export const ReportUserPage: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const profiles = useAppSelector(state => state.discovery.profiles);
-  const targetUser = profiles.find(p => p.id === userId) || profiles[0];
+  const [loadedTarget, setLoadedTarget] = useState<(typeof profiles)[number] | null>(null);
+  const targetUser = profiles.find(p => p.id === userId) || loadedTarget;
 
   const [selectedReason, setSelectedReason] = useState<string>(REPORT_REASONS[0]);
   const [details, setDetails] = useState('');
   const [alsoBlock, setAlsoBlock] = useState(true);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    socialApi.getProfile(userId)
+      .then(profile => { if (active) setLoadedTarget(profile); })
+      .catch(error => { if (active) message.error(error instanceof Error ? error.message : 'Unable to load profile.'); });
+    return () => { active = false; };
+  }, [userId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (alsoBlock && targetUser) {
-      dispatch(blockUser(targetUser));
+    if (!targetUser || !userId) return;
+    try {
+      await socialApi.reportUser(userId, selectedReason, details);
+      if (alsoBlock) {
+        await socialApi.setBlocked(userId, true);
+        dispatch(blockUser(targetUser));
+      }
+      setSubmitted(true);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to submit report.');
     }
-    setSubmitted(true);
   };
+
+  if (!targetUser) return null;
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 0' }}>

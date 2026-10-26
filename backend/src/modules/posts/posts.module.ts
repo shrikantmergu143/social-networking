@@ -8,6 +8,9 @@ import { PostComment } from './entities/post-comment.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostSave } from './entities/post-save.entity';
 import { PostCommentLike } from './entities/post-comment-like.entity';
+import { User } from '../users/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UserFollow } from '../users/entities/user-follow.entity';
 
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
@@ -22,7 +25,10 @@ import { PostsController } from './posts.controller';
       PostLike,
       PostSave,
       PostCommentLike,
+      User,
+      UserFollow,
     ]),
+    NotificationsModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],

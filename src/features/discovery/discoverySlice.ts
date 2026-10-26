@@ -1,12 +1,12 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { UserProfile, DatingPreferences, DatingActionRecord } from '../../types';
-import { MOCK_USERS } from '../../mocks/users';
 
 export interface DiscoveryState {
   profiles: UserProfile[];
   processedIds: string[];
   actionHistory: DatingActionRecord[];
   savedProfileIds: string[];
+  savedProfiles: UserProfile[];
   filters: DatingPreferences;
   lastMatchedUser: UserProfile | null;
   showMatchCelebration: boolean;
@@ -28,10 +28,11 @@ const defaultFilters: DatingPreferences = {
 };
 
 const initialState: DiscoveryState = {
-  profiles: MOCK_USERS,
+  profiles: [],
   processedIds: [],
   actionHistory: [],
-  savedProfileIds: ['usr_1', 'usr_2'],
+  savedProfileIds: [],
+  savedProfiles: [],
   filters: defaultFilters,
   lastMatchedUser: null,
   showMatchCelebration: false
@@ -41,6 +42,24 @@ export const discoverySlice = createSlice({
   name: 'discovery',
   initialState,
   reducers: {
+    replaceProfiles: (state, action: PayloadAction<UserProfile[]>) => {
+      state.profiles = action.payload;
+    },
+    setProfileFollowRequestPending: (state, action: PayloadAction<{ profileId: string; pending: boolean }>) => {
+      const profile = state.profiles.find(item => item.id === action.payload.profileId);
+      if (profile) profile.hasPendingFollowRequest = action.payload.pending;
+    },
+    replaceSavedProfiles: (state, action: PayloadAction<UserProfile[]>) => {
+      state.savedProfileIds = action.payload.map(profile => profile.id);
+      state.savedProfiles = action.payload;
+    },
+    replaceDiscoveryFilters: (state, action: PayloadAction<DatingPreferences>) => {
+      state.filters = action.payload;
+    },
+    showMatchedProfile: (state, action: PayloadAction<UserProfile | null>) => {
+      state.lastMatchedUser = action.payload;
+      state.showMatchCelebration = Boolean(action.payload);
+    },
     recordSwipe: (
       state,
       action: PayloadAction<{ profileId: string; actionType: 'like' | 'pass' | 'superlike' }>
@@ -55,16 +74,6 @@ export const discoverySlice = createSlice({
         timestamp: new Date().toISOString()
       });
 
-      // Deterministic mutual match scenario:
-      // Profiles 'usr_1' (Elena Rostova), 'usr_2' (Maya Lin), and 'usr_18' (Camille Laurent)
-      // are mutual match triggers when liked or superliked!
-      if (['usr_1', 'usr_2', 'usr_18'].includes(profileId) && (actionType === 'like' || actionType === 'superlike')) {
-        const matched = state.profiles.find(p => p.id === profileId);
-        if (matched) {
-          state.lastMatchedUser = matched;
-          state.showMatchCelebration = true;
-        }
-      }
     },
     dismissMatchCelebration: (state) => {
       state.showMatchCelebration = false;
@@ -81,14 +90,19 @@ export const discoverySlice = createSlice({
       const idx = state.savedProfileIds.indexOf(id);
       if (idx >= 0) {
         state.savedProfileIds.splice(idx, 1);
+        state.savedProfiles = state.savedProfiles.filter?.(profile => profile.id !== id);
       } else {
         state.savedProfileIds.push(id);
+        const profile = state.profiles.find(item => item.id === id);
+        if (profile && !state.savedProfiles.some(item => item.id === id)) {
+          state.savedProfiles.unshift(profile);
+        }
       }
     },
     rewindLastAction: (state) => {
       const last = state.actionHistory.pop();
       if (last) {
-        state.processedIds = state.processedIds.filter(id => id !== last.profileId);
+        state.processedIds = state.processedIds.filter?.(id => id !== last.profileId);
       }
     },
     resetDiscoveryQueue: (state) => {
@@ -100,6 +114,11 @@ export const discoverySlice = createSlice({
 
 export const {
   recordSwipe,
+  replaceProfiles,
+  setProfileFollowRequestPending,
+  replaceSavedProfiles,
+  replaceDiscoveryFilters,
+  showMatchedProfile,
   dismissMatchCelebration,
   updateFilters,
   resetFilters,

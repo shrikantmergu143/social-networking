@@ -30,6 +30,6 @@ export const authApi = {
   },
 
   logout() {
-    // tokenStorage.clear();
+    return http.delete<{ loggedOut: boolean }>('/auth/session');
   },
 };

@@ -33,13 +33,16 @@ export class SettingsService {
     if (!user) throw new NotFoundException('Account not found.');
     return {
       ...entity.settings,
+      isPrivate: user.isPrivate,
       credentials: { email: user.email, phone: user.phoneNumber || '', emailVerified: user.isVerified, phoneVerified: false },
     };
   }
 
   async update(userId: string, dto: UpdateSettingsDto) {
     const entity = await this.getOrCreate(userId);
-    entity.settings = { ...entity.settings, ...dto };
+    const { isPrivate, ...settingsUpdate } = dto;
+    entity.settings = { ...entity.settings, ...settingsUpdate };
+    if (isPrivate !== undefined) await this.users.update({ id: userId }, { isPrivate });
     await this.settings.save(entity);
     return this.get(userId);
   }

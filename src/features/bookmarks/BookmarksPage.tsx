@@ -10,16 +10,17 @@ import { useAppDispatch, useAppSelector } from '../../hooks';
 import { toggleSaveProfile } from '../discovery/discoverySlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './BookmarksPage.module.css';
+import { socialApi } from '../../lib/social.api';
 
 export const BookmarksPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'posts' | 'profiles'>('posts');
 
   const { posts, savedPostIds } = useAppSelector(state => state.feed);
-  const { profiles, savedProfileIds } = useAppSelector(state => state.discovery);
+  const { savedProfiles, savedProfileIds } = useAppSelector(state => state.discovery);
 
-  const savedPosts = posts.filter(p => savedPostIds.includes(p.id));
-  const savedProfiles = profiles.filter(p => savedProfileIds.includes(p.id));
+  const savedPosts = posts.filter?.(p => savedPostIds.includes(p.id));
+  const profilesToShow = savedProfiles.filter?.(profile => savedProfileIds.includes(profile.id));
 
   return (
     <div className={styles.container}>
@@ -63,9 +64,9 @@ export const BookmarksPage: React.FC = () => {
           />
         )
       ) : (
-        savedProfiles.length > 0 ? (
+        profilesToShow.length > 0 ? (
           <div className={styles.profilesGrid}>
-            {savedProfiles.map(profile => (
+            {profilesToShow.map(profile => (
               <div key={profile.id} className={styles.savedProfileCard}>
                 <Link
                   to={ROUTES.PROFILE(profile.id)}
@@ -89,9 +90,14 @@ export const BookmarksPage: React.FC = () => {
                 </Link>
 
                 <button
-                  onClick={() => {
-                    dispatch(toggleSaveProfile(profile.id));
-                    message.info('Removed from bookmarks');
+                  onClick={async () => {
+                    try {
+                      await socialApi.setSavedProfile(profile.id, false);
+                      dispatch(toggleSaveProfile(profile.id));
+                      message.info('Removed from bookmarks');
+                    } catch (error) {
+                      message.error(error instanceof Error ? error.message : 'Unable to remove bookmark.');
+                    }
                   }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 6 }}
                   title="Remove bookmark"

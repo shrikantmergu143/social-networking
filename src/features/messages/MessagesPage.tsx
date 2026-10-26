@@ -14,8 +14,10 @@ import { AppEmptyState } from '../../components/common/AppEmptyState';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import {
   setActiveConversation,
-  sendMessage,
   receiveMessage,
+  replaceConversations,
+  setConversationMessages,
+  appendServerMessage,
   setTypingStatus,
   markMessagesAsRead
 } from './messagesSlice';
@@ -23,6 +25,8 @@ import { socketService } from '../../app/socket';
 import { ROUTES } from '../../routes/paths';
 import type { ChatMessage } from '../../types';
 import styles from './MessagesPage.module.css';
+import { socialApi } from '../../lib/social.api';
+import { message } from '../../app/notification';
 
 export const MessagesPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId?: string }>();
@@ -35,6 +39,14 @@ export const MessagesPage: React.FC = () => {
 
   const [inputText, setInputText] = useState('');
   const [filterSearch, setFilterSearch] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    socialApi.getConversations()
+      .then(data => { if (active) dispatch(replaceConversations(data)); })
+      .catch(error => { if (active) message.error(error instanceof Error ? error.message : 'Unable to load conversations.'); });
+    return () => { active = false; };
+  }, [dispatch]);
 
   // Connect to socket and setup real-time listeners
   useEffect(() => {
@@ -80,7 +92,16 @@ export const MessagesPage: React.FC = () => {
   const activeConv = conversations.find(c => c.id === (conversationId || activeConversationId)) || conversations[0];
   const activeMessages = activeConv ? (messages[activeConv.id] || []) : [];
 
-  const filteredConversations = conversations.filter(c =>
+  useEffect(() => {
+    if (!activeConv) return;
+    let active = true;
+    socialApi.getMessages(activeConv.id)
+      .then(data => { if (active) dispatch(setConversationMessages({ conversationId: activeConv.id, messages: data })); })
+      .catch(error => { if (active) message.error(error instanceof Error ? error.message : 'Unable to load messages.'); });
+    return () => { active = false; };
+  }, [activeConv?.id, dispatch]);
+
+  const filteredConversations = conversations.filter?.(c =>
     c.participant.fullName.toLowerCase().includes(filterSearch.toLowerCase()) ||
     c.lastMessage?.text.toLowerCase().includes(filterSearch.toLowerCase())
   );
@@ -101,7 +122,7 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !activeConv) return;
 
@@ -115,18 +136,13 @@ export const MessagesPage: React.FC = () => {
       senderId: currentUser?.id || 'usr_me'
     });
 
-    // Optimistic local dispatch
-    dispatch(sendMessage({
-      conversationId: activeConv.id,
-      text
-    }));
-
-    // Broadcast over WebSocket
-    socketService.sendMessage({
-      conversationId: activeConv.id,
-      text,
-      senderId: currentUser?.id || 'usr_me'
-    });
+    try {
+      const savedMessage = await socialApi.sendMessage(activeConv.id, { text });
+      dispatch(appendServerMessage(savedMessage));
+    } catch (error) {
+      setInputText(text);
+      message.error(error instanceof Error ? error.message : 'Unable to send message.');
+    }
   };
 
   const quickPrompts = [

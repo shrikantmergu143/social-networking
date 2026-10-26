@@ -5,7 +5,6 @@ import { App } from 'antd';
 import { AppButton } from '../../components/common/AppButton';
 import { useAppDispatch } from '../../hooks';
 import { loginSuccess } from './authSlice';
-import { CURRENT_USER } from '../../mocks/users';
 import { ROUTES } from '../../routes/paths';
 import styles from './AuthPages.module.css';
 import { authApi } from './services/auth.api';
@@ -16,8 +15,8 @@ export const LoginPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { message } = App.useApp();
 
-  const [identifier, setIdentifier] = useState('alexmorgan@example.com');
-  const [password, setPassword] = useState('DemoSecure123!');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -48,8 +47,9 @@ export const LoginPage: React.FC = () => {
         user: userData?.user,
         token: userData?.accessToken,
       }));
+      navigate(from, { replace: true });
     }
-    setLoading(false)
+    setLoading(false);
     // setLoading(true);
     // setTimeout(() => {
     //   setLoading(false);
@@ -63,16 +63,16 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleQuickDemoLogin = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      dispatch(loginSuccess({
-        user: CURRENT_USER,
-        token: 'auth_token_demo'
-      }));
-      message.success('Signed in as demo user Alex Morgan');
-      navigate(ROUTES.FEED, { replace: true });
-    }, 300);
+    // setLoading(true);
+    // setTimeout(() => {
+    //   setLoading(false);
+    //   dispatch(loginSuccess({
+    //     user: CURRENT_USER,
+    //     token: 'auth_token_demo'
+    //   }));
+    //   message.success('Signed in as demo user Alex Morgan');
+    //   navigate(ROUTES.FEED, { replace: true });
+    // }, 300);
   };
 
   return (
@@ -81,21 +81,6 @@ export const LoginPage: React.FC = () => {
         <div className={styles.cardHeader}>
           <h1 className={styles.title}>Welcome Back</h1>
           <p className={styles.subtitle}>Enter your details to access your feed & matches</p>
-        </div>
-
-        {/* Instant Demo Quick-Access */}
-        <div className={styles.demoBanner}>
-          <div>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              ⚡ Demo Account Pre-configured
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              Alex Morgan (Product Designer, SF)
-            </div>
-          </div>
-          <AppButton size="sm" variant="outline" onClick={handleQuickDemoLogin}>
-            Quick Sign In
-          </AppButton>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -161,12 +146,12 @@ export const LoginPage: React.FC = () => {
           </AppButton>
         </form>
 
-        <div className={styles.socialDivider}>or continue with</div>
+        <div className={`hidden ${styles.socialDivider}`}>or continue with</div>
 
         {/* Mock social sign in clearly labeled */}
-        <button
+        <button 
           type="button"
-          className={styles.socialButton}
+          className={`hidden ${styles.socialButton}`}
           onClick={handleQuickDemoLogin}
           title="Sign in with Google (Demo)"
         >
@@ -181,7 +166,7 @@ export const LoginPage: React.FC = () => {
 
         <button
           type="button"
-          className={styles.socialButton}
+          className={`hidden ${styles.socialButton}`}
           onClick={handleQuickDemoLogin}
           title="Sign in with Apple (Demo)"
         >

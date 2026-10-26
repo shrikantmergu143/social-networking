@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Select, Tag, Input, Button, App } from 'antd';
 import { X } from 'lucide-react';
 import { AppDrawer } from '../../components/common/AppDrawer';
@@ -36,13 +36,26 @@ export const EditProfileDrawer: React.FC<EditProfileDrawerProps> = ({ open, onCl
     currentUser?.relationshipGoal || 'Long-term partner'
   );
 
+  useEffect(() => {
+    if (!open || !currentUser) return;
+    setFullName(currentUser.fullName);
+    setBio(currentUser.bio);
+    setLocation(currentUser.location);
+    setPronouns(currentUser.pronouns || '');
+    setOccupation(currentUser.lifestyle?.occupation || '');
+    setEducation(currentUser.lifestyle?.education || '');
+    setPhotos(currentUser.photos?.length ? currentUser.photos : [currentUser.avatar || '']);
+    setInterests(currentUser.interests || []);
+    setRelationshipGoal(currentUser.relationshipGoal || 'Still figuring it out');
+  }, [open, currentUser]);
+
 
   const handleRemovePhoto = (index: number) => {
     if (photos.length <= 1) {
       message.error('You must keep at least one profile photo');
       return;
     }
-    setPhotos(photos.filter((_, i) => i !== index));
+    setPhotos(photos.filter?.((_, i) => i !== index));
     message.success('Photo removed');
   };
 
@@ -83,7 +96,7 @@ export const EditProfileDrawer: React.FC<EditProfileDrawerProps> = ({ open, onCl
         {/* Photo Management */}
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, marginBottom: 8 }}>
-            Profile Photos ({new Set([...photos].filter(Boolean)).size})
+            Profile Photos ({new Set([...photos].filter?.(Boolean)).size})
           </label>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 12, }}>
             {photos.map((p, idx) => (
@@ -210,7 +223,7 @@ export const EditProfileDrawer: React.FC<EditProfileDrawerProps> = ({ open, onCl
               <Tag
                 key={item}
                 closable
-                onClose={() => setInterests(interests.filter(i => i !== item))}
+                onClose={() => setInterests(interests.filter?.(i => i !== item))}
                 color="magenta"
                 style={{ padding: '4px 10px', borderRadius: 999, fontSize: '0.8125rem' }}
               >
@@ -220,7 +233,7 @@ export const EditProfileDrawer: React.FC<EditProfileDrawerProps> = ({ open, onCl
           </div>
           <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 4 }}>Click to add from popular interests:</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {INTEREST_OPTIONS.filter(i => !interests.includes(i)).map(item => (
+            {INTEREST_OPTIONS.filter?.(i => !interests.includes(i)).map(item => (
               <Tag
                 key={item}
                 onClick={() => setInterests([...interests, item])}

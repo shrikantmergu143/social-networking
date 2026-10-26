@@ -62,6 +62,10 @@ export class User extends BaseEntity {
 
   @Column({ name: 'location', type: 'varchar', length: 255, nullable: true })
   location: string | null;
+  @Column({ name: 'latitude', type: 'double precision', nullable: true })
+  latitude: number | null;
+  @Column({ name: 'longitude', type: 'double precision', nullable: true })
+  longitude: number | null;
   @Column({ name: 'bio', type: 'text', default: '' })
   bio: string;
   @Column({ name: 'avatar', type: 'text', nullable: true })
@@ -78,6 +82,9 @@ export class User extends BaseEntity {
 
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   isVerified: boolean;
+
+  @Column({ name: 'is_private', type: 'boolean', default: false })
+  isPrivate: boolean;
 
   @Column({ name: 'is_online', type: 'boolean', default: false })
   isOnline: boolean;

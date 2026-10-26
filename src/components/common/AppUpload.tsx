@@ -53,7 +53,7 @@ export const AppUpload: React.FC<AppUploadProps> = ({
   const updateValue = (urls: string[]) => onChange?.(multiple ? urls : (urls[0] || ''));
 
   const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-    const allowedTypes = accept.split(',').map(type => type.trim()).filter(Boolean);
+    const allowedTypes = accept.split(',').map(type => type.trim()).filter?.(Boolean);
     if (allowedTypes.length && !allowedTypes.includes(file.type)) {
       message.error(`Only ${allowedTypes.map(type => type.split('/')[1]).join(', ')} files are allowed.`);
       return Upload.LIST_IGNORE;
@@ -83,9 +83,9 @@ export const AppUpload: React.FC<AppUploadProps> = ({
     setFileList(nextFileList);
 
     const urls = nextFileList
-      .filter(file => file.status === 'done')
+      .filter?.(file => file.status === 'done')
       .map(file => file.response?.url || file.url)
-      .filter((url): url is string => Boolean(url));
+      .filter?.((url): url is string => Boolean(url));
 
     // Keep the uploading item in Ant Design's list. Updating the parent only
     // after completion prevents the controlled value from removing the file.
@@ -110,10 +110,10 @@ export const AppUpload: React.FC<AppUploadProps> = ({
         previewFile={undefined}
         onRemove={file => {
           const urls = fileList
-            .filter(item => item.uid !== file.uid && item.status === 'done')
+            .filter?.(item => item.uid !== file.uid && item.status === 'done')
             .map(item => item.response?.url || item.url)
-            .filter((url): url is string => Boolean(url));
-          setFileList(fileList.filter(item => item.uid !== file.uid));
+            .filter?.((url): url is string => Boolean(url));
+          setFileList(fileList.filter?.(item => item.uid !== file.uid));
           updateValue(urls);
           return true;
         }}

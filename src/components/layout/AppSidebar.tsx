@@ -113,22 +113,6 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onOpenCreatePost }) => {
 
       {/* Bottom VIP banner + User profile mini card */}
       <div className={styles.bottomSection}>
-        <div
-          className={styles.premiumBanner}
-          onClick={() => navigate(ROUTES.PREMIUM)}
-          role="button"
-          tabIndex={0}
-          title="Upgrade to Aura Elite"
-        >
-          <div className={styles.premiumHeader}>
-            <div className={styles.premiumTitle}>
-              <Sparkles size={16} color="var(--accent)" /> Aura Elite
-            </div>
-            <span className={styles.vipTag}>PRO</span>
-          </div>
-          <p className={styles.premiumDesc}>Unlimited likes & priority discover</p>
-        </div>
-
         {/* User Card */}
         {currentUser && (
           <div className={styles.userProfileCard}>

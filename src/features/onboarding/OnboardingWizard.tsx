@@ -63,7 +63,7 @@ export const OnboardingWizard: React.FC = () => {
 
   const toggleInterest = (interest: string) => {
     if (selectedInterests.includes(interest)) {
-      setSelectedInterests(selectedInterests.filter(i => i !== interest));
+      setSelectedInterests(selectedInterests.filter?.(i => i !== interest));
     } else {
       if (selectedInterests.length < 7) {
         setSelectedInterests([...selectedInterests, interest]);

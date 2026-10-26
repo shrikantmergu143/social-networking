@@ -67,6 +67,14 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User account no longer exists');
     return this.toPublicUser(user);
   }
+  async logout(userId: string) {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User account no longer exists');
+    user.isOnline = false;
+    user.lastActive = new Date();
+    await this.users.save(user);
+    return { loggedOut: true };
+  }
   private async generateUniqueUsername(email: string): Promise<string> {
     const base =
       (email.split('@')[0] || 'user')
@@ -89,7 +97,10 @@ export class AuthService {
       'Could not generate a username; please try again',
     );
   }
-  private buildAuthResponse(user: User) {
+  private async buildAuthResponse(user: User) {
+    user.isOnline = true;
+    user.lastActive = new Date();
+    await this.users.save(user);
     const payload: JwtPayload = { sub: user.id, email: user.email };
     const expiresIn = process.env.JWT_EXPIRES_IN || '15m';
     return {
@@ -109,15 +120,25 @@ export class AuthService {
       phoneNumber: user.phoneNumber,
       birthDate: user.birthDate,
       gender: user.gender,
-      pronouns: user.pronouns,
-      location: user.location,
+      pronouns: user.pronouns ?? undefined,
+      location: user.location ?? '',
       bio: user.bio,
-      avatar: user.avatar,
-      coverImage: user.coverImage,
-      relationshipGoal: user.relationshipGoal,
+      avatar: user.avatar ?? '',
+      coverImage: user.coverImage ?? '',
+      relationshipGoal: user.relationshipGoal ?? 'Still figuring it out',
+      age: user.birthDate
+        ? Math.max(0, Math.floor((Date.now() - new Date(user.birthDate).getTime()) / 31557600000))
+        : 18,
+      distanceKm: 0,
+      photos: [],
+      interests: [],
+      lifestyle: {},
+      followerCount: 0,
+      followingCount: 0,
+      postCount: 0,
       isVerified: user.isVerified,
       isOnline: user.isOnline,
-      lastActive: user.lastActive,
+      lastActive: user.lastActive?.toISOString() ?? '',
     };
   }
 }

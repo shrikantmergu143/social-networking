@@ -40,7 +40,7 @@ export const StoriesCarousel: React.FC<StoriesCarouselProps> = ({ onOpenCreateSt
         </div>
 
         {/* Other users stories */}
-        {stories.filter(s => s.userId !== 'usr_me').map((userStory) => (
+        {stories.filter?.(s => s.userId !== 'usr_me').map((userStory) => (
           <div
             key={userStory.id}
             className={styles.storyItem}

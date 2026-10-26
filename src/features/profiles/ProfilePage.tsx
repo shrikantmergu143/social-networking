@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Heart,
@@ -18,11 +18,14 @@ import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppButton } from '../../components/common/AppButton';
 import { PostCard } from '../feed/PostCard';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { recordSwipe } from '../discovery/discoverySlice';
 import { toggleFollowUser, blockUser } from '../connections/connectionsSlice';
-import { startConversationWithUser } from '../messages/messagesSlice';
+import { replaceNotifications } from '../notifications/notificationsSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './ProfilePage.module.css';
+import { socialApi } from '../../lib/social.api';
+import { ProfileCover } from './ProfileCover';
+import { setProfileFollowRequestPending } from '../discovery/discoverySlice';
+import { getFollowButtonLabel, isFollowingProfile } from '../../lib/followStatus';
 
 export const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -33,6 +36,16 @@ export const ProfilePage: React.FC = () => {
   const profiles = useAppSelector(state => state.discovery.profiles);
   const posts = useAppSelector(state => state.feed.posts);
   const following = useAppSelector(state => state.connections.following);
+  const [loadedProfile, setLoadedProfile] = useState<(typeof profiles)[number] | null>(null);
+
+  useEffect(() => {
+    if (!userId || userId === currentUser?.id) return;
+    let active = true;
+    socialApi.getProfile(userId)
+      .then(data => { if (active) setLoadedProfile(data); })
+      .catch(error => { if (active) message.error(error instanceof Error ? error.message : 'Unable to load profile.'); });
+    return () => { active = false; };
+  }, [userId, currentUser?.id]);
 
   // If userId is 'usr_me' or matches current user id, navigate to /my-profile
   if (userId === 'usr_me' || userId === currentUser?.id) {
@@ -40,28 +53,67 @@ export const ProfilePage: React.FC = () => {
     return null;
   }
 
-  const profile = profiles.find(p => p.id === userId) || profiles[0];
-  const isFollowed = following.some(f => f.id === profile.id);
-  const userPosts = posts.filter(p => p.userId === profile.id);
+  const profile = loadedProfile?.id === userId ? loadedProfile : profiles.find(p => p.id === userId);
+  if (!profile) return null;
+  const isFollowed = isFollowingProfile(profile, following);
+  const userPosts = profile.isPrivate && !isFollowed ? [] : posts.filter?.(p => p.userId === profile.id);
 
-  const handleLike = () => {
-    dispatch(recordSwipe({ profileId: profile.id, actionType: 'like' }));
-    message.success(`You liked ${profile.fullName}!`);
+  const handleLike = async () => {
+    try {
+      const result = await socialApi.recordDatingAction(profile.id, 'like');
+      message.success(result.matched ? `It's a match with ${profile.fullName}!` : `You liked ${profile.fullName}!`);
+      dispatch(replaceNotifications(await socialApi.getNotifications()));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to like this profile.');
+    }
   };
 
-  const handleSuperLike = () => {
-    dispatch(recordSwipe({ profileId: profile.id, actionType: 'superlike' }));
-    message.success(`You Super Liked ${profile.fullName}!`);
+  const handleSuperLike = async () => {
+    try {
+      const result = await socialApi.recordDatingAction(profile.id, 'superlike');
+      message.success(result.matched ? `It's a match with ${profile.fullName}!` : `You Super Liked ${profile.fullName}!`);
+      dispatch(replaceNotifications(await socialApi.getNotifications()));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to super like this profile.');
+    }
   };
 
-  const handleSendMessage = () => {
-    dispatch(startConversationWithUser({ user: profile }));
-    navigate(ROUTES.MESSAGES);
+  const handleSendMessage = async () => {
+    if (profile.isPrivate && !isFollowed) {
+      message.info('Follow this private profile and wait for approval before messaging.');
+      return;
+    }
+    try {
+      const conversation = await socialApi.openConversation(profile.id);
+      navigate(ROUTES.CONVERSATION(conversation.id));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to open conversation.');
+    }
   };
 
-  const handleToggleFollow = () => {
-    dispatch(toggleFollowUser(profile));
-    message.info(isFollowed ? `Unfollowed ${profile.fullName}` : `Following ${profile.fullName}`);
+  const handleToggleFollow = async () => {
+    try {
+      if (profile.hasPendingFollowRequest && !isFollowed) {
+        await socialApi.cancelFollowRequest(profile.id);
+        dispatch(setProfileFollowRequestPending({ profileId: profile.id, pending: false }));
+        setLoadedProfile({ ...profile, hasPendingFollowRequest: false });
+        message.info('Follow request cancelled');
+        return;
+      }
+      const result = await socialApi.setFollow(profile.id, !isFollowed);
+      if (result.requestPending) {
+        dispatch(setProfileFollowRequestPending({ profileId: profile.id, pending: true }));
+        setLoadedProfile({ ...profile, hasPendingFollowRequest: true });
+        message.success(`Follow request sent to ${profile.fullName}`);
+      } else {
+        dispatch(toggleFollowUser(profile));
+        setLoadedProfile({ ...profile, isFollowing: !isFollowed, hasPendingFollowRequest: false });
+        dispatch(replaceNotifications(await socialApi.getNotifications()));
+        message.info(isFollowed ? `Unfollowed ${profile.fullName}` : `Followed ${profile.fullName}`);
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to update follow.');
+    }
   };
 
   const moreMenuItems: MenuProps['items'] = [
@@ -77,9 +129,13 @@ export const ProfilePage: React.FC = () => {
       icon: <ShieldAlert size={14} />,
       danger: true,
       onClick: () => {
-        dispatch(blockUser(profile));
-        message.warning(`Blocked ${profile.fullName}`);
-        navigate(ROUTES.FEED);
+        void socialApi.setBlocked(profile.id, true)
+          .then(() => {
+            dispatch(blockUser(profile));
+            message.warning(`Blocked ${profile.fullName}`);
+            navigate(ROUTES.FEED);
+          })
+          .catch(error => message.error(error instanceof Error ? error.message : 'Unable to block user.'));
       }
     }
   ];
@@ -88,11 +144,7 @@ export const ProfilePage: React.FC = () => {
     <div className={styles.profileContainer}>
       {/* Cover & Profile Header */}
       <div className={styles.coverCard}>
-        <img
-          src={profile.coverImage || profile.photos[0]}
-          alt="Cover"
-          className={styles.coverImage}
-        />
+        <ProfileCover src={profile.coverImage || profile.photos[0]} alt="Cover" />
         <div className={styles.headerBar}>
           <div className={styles.avatarFloating}>
             <AppAvatar
@@ -134,7 +186,7 @@ export const ProfilePage: React.FC = () => {
                 onClick={handleToggleFollow}
                 icon={isFollowed ? <UserCheck size={16} /> : <UserPlus size={16} />}
               >
-                {isFollowed ? 'Following' : 'Follow'}
+                {getFollowButtonLabel(profile, isFollowed)}
               </AppButton>
 
               <AppButton
@@ -158,9 +210,11 @@ export const ProfilePage: React.FC = () => {
                 variant="secondary"
                 size="sm"
                 onClick={handleSendMessage}
+                disabled={Boolean(profile.isPrivate && !isFollowed)}
+                title={profile.isPrivate && !isFollowed ? 'Follow and wait for approval before messaging' : undefined}
                 icon={<MessageCircle size={16} />}
               >
-                Message
+                {profile.isPrivate && !isFollowed ? 'Private' : 'Message'}
               </AppButton>
 
               <Dropdown menu={{ items: moreMenuItems }} trigger={['click']} placement="bottomRight">

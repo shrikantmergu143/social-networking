@@ -14,6 +14,8 @@ import {
 import { App } from 'antd';
 import { useAppDispatch, useAppSelector } from '../../hooks';
 import { recordSwipe, rewindLastAction, toggleSaveProfile } from './discoverySlice';
+import { showMatchedProfile } from './discoverySlice';
+import { socialApi } from '../../lib/social.api';
 import { ROUTES } from '../../routes/paths';
 import type { UserProfile } from '../../types';
 import styles from './DiscoveryCard.module.css';
@@ -55,24 +57,33 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ profile }) => {
     }
   };
 
+  const submitAction = async (action: 'like' | 'pass' | 'superlike') => {
+    try {
+      const result = await socialApi.recordDatingAction(profile.id, action);
+      dispatch(recordSwipe({ profileId: profile.id, actionType: action }));
+      if (result.matched) dispatch(showMatchedProfile(profile));
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to save this action.');
+      setDragX(0);
+    }
+  };
+
   const handlePass = () => {
     setDragX(-300);
     setTimeout(() => {
-      dispatch(recordSwipe({ profileId: profile.id, actionType: 'pass' }));
-      setDragX(0);
+      void submitAction('pass').finally(() => setDragX(0));
     }, 200);
   };
 
   const handleLike = () => {
     setDragX(300);
     setTimeout(() => {
-      dispatch(recordSwipe({ profileId: profile.id, actionType: 'like' }));
-      setDragX(0);
+      void submitAction('like').finally(() => setDragX(0));
     }, 200);
   };
 
   const handleSuperLike = () => {
-    dispatch(recordSwipe({ profileId: profile.id, actionType: 'superlike' }));
+    void submitAction('superlike');
   };
 
   const handleRewind = () => {
@@ -84,9 +95,14 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ profile }) => {
     }
   };
 
-  const handleToggleSave = () => {
-    dispatch(toggleSaveProfile(profile.id));
-    message.success(isSaved ? 'Profile removed from bookmarks' : 'Profile bookmarked');
+  const handleToggleSave = async () => {
+    try {
+      await socialApi.setSavedProfile(profile.id, !isSaved);
+      dispatch(toggleSaveProfile(profile.id));
+      message.success(isSaved ? 'Profile removed from bookmarks' : 'Profile bookmarked');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to save profile.');
+    }
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -253,4 +269,3 @@ export const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ profile }) => {
     </div>
   );
 };
-
