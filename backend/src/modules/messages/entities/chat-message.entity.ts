@@ -6,11 +6,13 @@ import {
   JoinColumn,
   CreateDateColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
 
 import { User } from '../../users/entities/user.entity';
 import { MessageStatus } from 'src/shared/entity/enum';
 import { Conversation } from 'src/modules/conversations/entities/conversation.entity';
+import { MessageReceipt } from './message-receipt.entity';
 
 @Entity('chat_messages')
 @Index('idx_chat_messages_conversation_created', [
@@ -53,4 +55,7 @@ export class ChatMessage {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
+
+  @OneToMany(() => MessageReceipt, (receipt) => receipt.message)
+  receipts: MessageReceipt[];
 }

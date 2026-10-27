@@ -99,6 +99,12 @@ export const socialApi = {
   async getMessages(conversationId: string) {
     return unwrapApiResponse(await http.get<ChatMessage[]>(`/messages/${encodeURIComponent(conversationId)}`));
   },
+  async markConversationRead(conversationId: string) {
+    return unwrapApiResponse(await http.patch<
+      { conversationId: string; readerId: string; readAt: string },
+      Record<string, never>
+    >(`/messages/${encodeURIComponent(conversationId)}/read`, {}));
+  },
   async sendMessage(conversationId: string, payload: { text: string; imageUrl?: string }) {
     return unwrapApiResponse(await http.post<ChatMessage, typeof payload>(`/messages/${encodeURIComponent(conversationId)}`, payload));
   },

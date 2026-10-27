@@ -22,7 +22,7 @@
 - **Profile Details (`/profile/:userId`)**: Full-page inspection with lifestyle breakdown (work, education, zodiac, drinking, workout, pets), photo gallery, and dating action triggers.
 
 ### 3. Communication & Safety
-- **Direct Messaging (`/messages` & `/messages/:conversationId`)**: Responsive chat stage with real-time simulated typing indicators, read receipts, quick prompt chips, and message history.
+- **Direct Messaging (`/messages` & `/messages/:conversationId`)**: Responsive chat stage with persisted messages delivered in real time through an authenticated Socket.IO connection, typing indicators, and per-message, per-user delivery/read timestamps stored as message receipts.
 - **Notifications Hub (`/notifications`)**: Unread badge count, categorization (All, Unread, Matches, Social), and mark-as-read controls.
 - **Safety & Moderation (`/blocked-users` & `/report/:userId`)**: Blocklist manager and report submission flow with categorized violation reasons.
 - **Aura Premium (`/premium`)**: Tier comparison (Aura Plus vs. Aura Elite), monthly/annual pricing toggle, and demonstration activation flow.
@@ -79,7 +79,7 @@ To transition from the current persistent mock frontend to a full-stack producti
 1. **API Client (`src/services/apiClient.ts`)**:
    - Replace local Redux mock dispatches with Axios or Fetch calls to REST/GraphQL endpoints (e.g. `/api/auth/login`, `/api/feed/posts`, `/api/discovery/swipe`).
 2. **Real-Time Messaging**:
-   - Replace the simulated typing indicator and timeout in `messagesSlice.ts` with a WebSocket client (such as Socket.io or Firebase Firestore real-time listeners).
+   - The NestJS Socket.IO gateway authenticates clients with their access token, verifies conversation membership, and broadcasts persisted messages and typing indicators to authorized participants.
 3. **Authentication**:
    - Store secure HttpOnly session cookies or Bearer JWT tokens received from your OAuth/Auth server rather than storing demo tokens in `localStorage`.
 4. **Media Uploads**:

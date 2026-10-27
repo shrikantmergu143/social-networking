@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, UserPlus, UserCheck, CheckCircle, Search, Sparkles } from 'lucide-react';
 import { message } from '../../app/notification';
 import { AppAvatar } from '../../components/common/AppAvatar';
@@ -15,21 +15,48 @@ import { getFollowButtonLabel, isFollowingProfile } from '../../lib/followStatus
 
 export const ConnectionsPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { following, followers, pendingRequests } = useAppSelector(state => state.connections);
   const profiles = useAppSelector(state => state.discovery.profiles);
 
   // Tab: following | followers | requests | suggested
-  const currentPath = window.location.pathname;
+  const currentPath = location.pathname;
   const defaultTab = currentPath.includes('followers')
     ? 'followers'
     : currentPath.includes('requests')
     ? 'requests'
+    : currentPath.includes('suggested')
+    ? 'suggested'
     : currentPath.includes('following')
     ? 'following'
     : 'following';
 
   const [activeTab, setActiveTab] = useState<'following' | 'followers' | 'requests' | 'suggested'>(defaultTab);
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    setActiveTab(currentPath.includes('requests')
+      ? 'requests'
+      : currentPath.includes('followers')
+      ? 'followers'
+      : currentPath.includes('suggested')
+      ? 'suggested'
+      : currentPath.includes('following')
+      ? 'following'
+      : 'following');
+  }, [currentPath]);
+
+  const changeTab = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    navigate(tab === 'requests'
+      ? ROUTES.FOLLOW_REQUESTS
+      : tab === 'followers'
+      ? ROUTES.FOLLOWERS
+      : tab === 'following'
+      ? ROUTES.FOLLOWING
+      : ROUTES.SUGGESTED_CONNECTIONS);
+  };
 
   // Suggested = profiles not yet in following and not 'usr_me'
   const suggested = profiles.filter?.(
@@ -71,25 +98,25 @@ export const ConnectionsPage: React.FC = () => {
         <div className={styles.tabsBar}>
           <button
             className={`${styles.tabItem} ${activeTab === 'following' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('following')}
+            onClick={() => changeTab('following')}
           >
             Following ({following.length})
           </button>
           <button
             className={`${styles.tabItem} ${activeTab === 'followers' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('followers')}
+            onClick={() => changeTab('followers')}
           >
             Followers ({followers.length})
           </button>
           <button
             className={`${styles.tabItem} ${activeTab === 'requests' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('requests')}
+            onClick={() => changeTab('requests')}
           >
             Requests ({pendingRequests.length})
           </button>
           <button
             className={`${styles.tabItem} ${activeTab === 'suggested' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('suggested')}
+            onClick={() => changeTab('suggested')}
           >
             Explore ({suggested.length})
           </button>

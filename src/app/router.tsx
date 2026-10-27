@@ -148,6 +148,14 @@ export const router = createBrowserRouter([
         element: <ConnectionsPage />
       },
       {
+        path: ROUTES.SUGGESTED_CONNECTIONS,
+        element: <ConnectionsPage />
+      },
+      {
+        path: ROUTES.FOLLOW_REQUESTS,
+        element: <ConnectionsPage />
+      },
+      {
         path: ROUTES.FOLLOWERS,
         element: <ConnectionsPage />
       },

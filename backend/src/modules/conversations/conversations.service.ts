@@ -8,6 +8,7 @@ import { User } from '../users/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationTargetType, NotificationType } from '../../shared/entity/enum';
 import { UserFollow } from '../users/entities/user-follow.entity';
+import { MessageStatus } from '../../shared/entity/enum';
 
 @Injectable()
 export class ConversationsService {
@@ -23,7 +24,7 @@ export class ConversationsService {
   async list(userId: string) {
     const rows = await this.participants.find({
       where: { userId },
-      relations: { conversation: { participants: { user: true }, messages: { sender: true } } },
+      relations: { conversation: { participants: { user: true }, messages: { sender: true, receipts: true } } },
     });
     return rows.map(({ conversation }) => {
       const other = conversation.participants.find(participant => participant.userId !== userId)?.user;
@@ -34,9 +35,11 @@ export class ConversationsService {
         id: conversation.id,
         participant: this.profile(other),
         lastMessage: last ? this.message(last) : undefined,
-        unreadCount: conversation.messages.filter?.(message =>
-          message.senderId !== userId && (!own?.lastReadAt || message.createdAt > own.lastReadAt)
-        ).length,
+        unreadCount: conversation.messages.filter(message => {
+          if (message.senderId === userId) return false;
+          const receipt = message.receipts?.find(item => item.userId === userId);
+          return receipt ? !receipt.readAt : !own?.lastReadAt || message.createdAt > own.lastReadAt;
+        }).length,
         updatedAt: conversation.updatedAt.toISOString(),
       };
     }).filter?.(Boolean).sort((a: any, b: any) => b.updatedAt.localeCompare(a.updatedAt));
@@ -82,10 +85,23 @@ export class ConversationsService {
   }
 
   private message(message: ChatMessage) {
+    const recipientReceipts = (message.receipts ?? [])
+      .filter(receipt => receipt.userId !== message.senderId);
+    const status = recipientReceipts.length && recipientReceipts.every(receipt => receipt.readAt)
+      ? MessageStatus.READ
+      : recipientReceipts.length && recipientReceipts.every(receipt => receipt.deliveredAt)
+        ? MessageStatus.DELIVERED
+        : MessageStatus.SENT;
     return {
       id: message.id, conversationId: message.conversationId, senderId: message.senderId,
-      text: message.text, timestamp: message.createdAt.toISOString(), status: message.status,
+      text: message.text, timestamp: message.createdAt.toISOString(), status,
       imageUrl: message.imageUrl ?? undefined,
+      receipts: (message.receipts ?? []).map(receipt => ({
+        messageId: receipt.messageId,
+        userId: receipt.userId,
+        deliveredAt: receipt.deliveredAt?.toISOString() ?? null,
+        readAt: receipt.readAt?.toISOString() ?? null,
+      })),
     };
   }
 }

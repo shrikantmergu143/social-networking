@@ -1,18 +1,20 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Conversation, ChatMessage, UserProfile } from '../../types';
+import type { Conversation, ChatMessage, MessageReceipt, UserProfile } from '../../types';
 
 export interface MessagesState {
   conversations: Conversation[];
   messages: Record<string, ChatMessage[]>;
   activeConversationId: string | null;
   searchFilter: string;
+  readReceiptKeys: string[];
 }
 
 const initialState: MessagesState = {
   conversations: [],
   messages: {},
   activeConversationId: null,
-  searchFilter: ''
+  searchFilter: '',
+  readReceiptKeys: []
 };
 
 export const messagesSlice = createSlice({
@@ -31,12 +33,13 @@ export const messagesSlice = createSlice({
     appendServerMessage: (state, action: PayloadAction<ChatMessage>) => {
       const { conversationId } = action.payload;
       state.messages[conversationId] ||= [];
-      if (!state.messages[conversationId].some(message => message.id === action.payload.id)) {
+      const existingMessage = state.messages[conversationId].find(message => message.id === action.payload.id);
+      if (!existingMessage) {
         state.messages[conversationId].push(action.payload);
       }
       const conversation = state.conversations.find(item => item.id === conversationId);
       if (conversation) {
-        conversation.lastMessage = action.payload;
+        conversation.lastMessage = existingMessage ?? action.payload;
         conversation.updatedAt = action.payload.timestamp;
       }
     },
@@ -49,10 +52,6 @@ export const messagesSlice = createSlice({
     },
     setActiveConversation: (state, action: PayloadAction<string | null>) => {
       state.activeConversationId = action.payload;
-      if (action.payload) {
-        const conv = state.conversations.find(c => c.id === action.payload);
-        if (conv) conv.unreadCount = 0;
-      }
     },
     sendMessage: (
       state,
@@ -85,33 +84,62 @@ export const messagesSlice = createSlice({
     },
     receiveMessage: (
       state,
-      action: PayloadAction<{ conversationId: string; text: string; senderId: string; imageUrl?: string }>
+      action: PayloadAction<{ message: ChatMessage; currentUserId: string }>
     ) => {
-      const { conversationId, text, senderId, imageUrl } = action.payload;
-      const newMsg: ChatMessage = {
-        id: `msg_${Date.now()}`,
-        conversationId,
-        senderId,
-        text,
-        imageUrl,
-        timestamp: 'Just now',
-        status: 'delivered'
-      };
-
-      if (!state.messages) {
-        state.messages = {};
-      }
-      if (!state.messages[conversationId]) {
-        state.messages[conversationId] = [];
-      }
-      state.messages[conversationId].push(newMsg);
+      const { message, currentUserId } = action.payload;
+      const { conversationId } = message;
+      state.messages[conversationId] ||= [];
+      if (state.messages[conversationId].some(item => item.id === message.id)) return;
+      state.messages[conversationId].push(message);
 
       const conv = state.conversations.find(c => c.id === conversationId);
       if (conv) {
-        conv.lastMessage = newMsg;
-        conv.updatedAt = 'Just now';
-        if (state.activeConversationId !== conversationId) {
+        conv.lastMessage = message;
+        conv.updatedAt = message.timestamp;
+        if (message.senderId !== currentUserId && state.activeConversationId !== conversationId) {
           conv.unreadCount += 1;
+        }
+      }
+    },
+    updateMessageReceipts: (
+      state,
+      action: PayloadAction<{ conversationId: string; receipts: MessageReceipt[]; currentUserId: string }>
+    ) => {
+      const { conversationId, receipts, currentUserId } = action.payload;
+      for (const receipt of receipts) {
+        const receiptKey = `${receipt.messageId}:${receipt.userId}`;
+        const becameRead = receipt.userId === currentUserId &&
+          Boolean(receipt.readAt) &&
+          !state.readReceiptKeys.includes(receiptKey);
+        if (becameRead) state.readReceiptKeys.push(receiptKey);
+
+        const chatMessage = state.messages[conversationId]?.find(item => item.id === receipt.messageId);
+        const conversation = state.conversations.find(item => item.id === conversationId);
+        if (chatMessage) {
+          chatMessage.receipts = chatMessage.receipts ?? [];
+          const existing = chatMessage.receipts.find(item => item.userId === receipt.userId);
+          if (existing) {
+            existing.deliveredAt = receipt.deliveredAt;
+            existing.readAt = receipt.readAt;
+          } else {
+            chatMessage.receipts.push(receipt);
+          }
+
+          const recipients = chatMessage.receipts.filter(item => item.userId !== chatMessage.senderId);
+          if (recipients.length && recipients.every(item => item.readAt)) {
+            chatMessage.status = 'read';
+          } else if (recipients.length && recipients.every(item => item.deliveredAt)) {
+            chatMessage.status = 'delivered';
+          } else {
+            chatMessage.status = 'sent';
+          }
+
+          if (conversation?.lastMessage?.id === chatMessage.id) {
+            conversation.lastMessage = chatMessage;
+          }
+        }
+        if (becameRead && state.activeConversationId !== conversationId && conversation) {
+          conversation.unreadCount = Math.max(0, conversation.unreadCount - 1);
         }
       }
     },
@@ -171,15 +199,8 @@ export const messagesSlice = createSlice({
       state.searchFilter = action.payload;
     },
     markMessagesAsRead: (state, action: PayloadAction<string>) => {
-      const conversationId = action.payload;
-      const msgs = state.messages[conversationId];
-      if (msgs) {
-        msgs.forEach(m => {
-          if (m.senderId === 'usr_me') {
-            m.status = 'read';
-          }
-        });
-      }
+      const conversation = state.conversations.find(item => item.id === action.payload);
+      if (conversation) conversation.unreadCount = 0;
     }
   }
 });
@@ -192,6 +213,7 @@ export const {
   setActiveConversation,
   sendMessage,
   receiveMessage,
+  updateMessageReceipts,
   setTypingStatus,
   startConversationWithUser,
   setMessagesSearchFilter,

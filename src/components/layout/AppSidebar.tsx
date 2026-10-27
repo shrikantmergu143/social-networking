@@ -12,7 +12,8 @@ import {
   Sparkles,
   PlusCircle,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  UserRoundPlus
 } from 'lucide-react';
 import { AppAvatar } from '../common/AppAvatar';
 import { AppButton } from '../common/AppButton';
@@ -33,6 +34,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onOpenCreatePost }) => {
   const unreadMessagesCount = useAppSelector(state =>
     state.messages.conversations.reduce((acc, c) => acc + c.unreadCount, 0)
   );
+  const pendingFollowRequestsCount = useAppSelector(state => state.connections.pendingRequests.length);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -47,6 +49,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ onOpenCreatePost }) => {
     { label: 'Explore & Search', path: ROUTES.SEARCH, icon: Search },
     { label: 'Saved Items', path: ROUTES.SAVED, icon: Bookmark },
     { label: 'Connections', path: ROUTES.CONNECTIONS, icon: Users },
+    {
+      label: 'Follow Requests',
+      path: ROUTES.FOLLOW_REQUESTS,
+      icon: UserRoundPlus,
+      badge: pendingFollowRequestsCount > 0 ? pendingFollowRequestsCount : undefined
+    },
     { label: 'Settings', path: ROUTES.SETTINGS, icon: Settings }
   ];
 

@@ -132,6 +132,14 @@ export interface ChatMessage {
   timestamp: string;
   status: 'sent' | 'delivered' | 'read';
   imageUrl?: string;
+  receipts?: MessageReceipt[];
+}
+
+export interface MessageReceipt {
+  messageId: string;
+  userId: string;
+  deliveredAt: string | null;
+  readAt: string | null;
 }
 
 export interface Conversation {

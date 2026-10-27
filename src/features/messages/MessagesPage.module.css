@@ -194,6 +194,48 @@
   gap: 12px;
 }
 
+.privateAccessNotice {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 440px;
+  margin: auto;
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.privateAccessIcon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.privateAccessNotice h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.privateAccessNotice p {
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.privateAccessHint {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
 .messageRow {
   display: flex;
   flex-direction: column;

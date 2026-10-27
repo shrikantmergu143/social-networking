@@ -8,9 +8,10 @@ import { ChatMessage } from '../messages/entities/chat-message.entity';
 import { User } from '../users/entities/user.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { UserFollow } from '../users/entities/user-follow.entity';
+import { MessageReceipt } from '../messages/entities/message-receipt.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Conversation, ConversationParticipant, ChatMessage, User, UserFollow]), NotificationsModule],
+  imports: [TypeOrmModule.forFeature([Conversation, ConversationParticipant, ChatMessage, MessageReceipt, User, UserFollow]), NotificationsModule],
   controllers: [ConversationsController],
   providers: [ConversationsService]
 })

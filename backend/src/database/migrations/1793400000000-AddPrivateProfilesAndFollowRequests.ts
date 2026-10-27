@@ -4,7 +4,9 @@ export class AddPrivateProfilesAndFollowRequests1793400000000 implements Migrati
   name = 'AddPrivateProfilesAndFollowRequests1793400000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" ADD "is_private" boolean NOT NULL DEFAULT false`);
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD "is_private" boolean NOT NULL DEFAULT false`,
+    );
     await queryRunner.query(`
       CREATE TABLE "user_follow_requests" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -18,7 +20,9 @@ export class AddPrivateProfilesAndFollowRequests1793400000000 implements Migrati
         CONSTRAINT "FK_user_follow_requests_target" FOREIGN KEY ("target_id") REFERENCES "users"("id") ON DELETE CASCADE
       )
     `);
-    await queryRunner.query(`ALTER TYPE "public"."notifications_type_enum" RENAME TO "notifications_type_enum_old"`);
+    await queryRunner.query(
+      `ALTER TYPE "public"."notifications_type_enum" RENAME TO "notifications_type_enum_old"`,
+    );
     await queryRunner.query(`
       CREATE TYPE "public"."notifications_type_enum" AS ENUM(
         'like', 'comment', 'follow', 'follow_request', 'follow_accepted',
@@ -34,7 +38,9 @@ export class AddPrivateProfilesAndFollowRequests1793400000000 implements Migrati
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TYPE "public"."notifications_type_enum" RENAME TO "notifications_type_enum_new"`);
+    await queryRunner.query(
+      `ALTER TYPE "public"."notifications_type_enum" RENAME TO "notifications_type_enum_new"`,
+    );
     await queryRunner.query(`
       CREATE TYPE "public"."notifications_type_enum" AS ENUM('like', 'comment', 'follow', 'match', 'message', 'system')
     `);

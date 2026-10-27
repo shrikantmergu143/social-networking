@@ -23,6 +23,8 @@ export const ROUTES = {
   SEARCH: '/search',
   NOTIFICATIONS: '/notifications',
   CONNECTIONS: '/connections',
+  SUGGESTED_CONNECTIONS: '/connections/suggested',
+  FOLLOW_REQUESTS: '/follow-requests',
   FOLLOWERS: '/followers',
   FOLLOWING: '/following',
   SAVED: '/saved',

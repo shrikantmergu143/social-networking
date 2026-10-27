@@ -8,6 +8,7 @@ import {
   MapPin,
   Sparkles,
   ShieldAlert,
+  ShieldCheck,
   Flag,
   UserPlus,
   UserCheck
@@ -18,7 +19,7 @@ import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppButton } from '../../components/common/AppButton';
 import { PostCard } from '../feed/PostCard';
 import { useAppDispatch, useAppSelector } from '../../hooks';
-import { toggleFollowUser, blockUser } from '../connections/connectionsSlice';
+import { toggleFollowUser, blockUser, unblockUser } from '../connections/connectionsSlice';
 import { replaceNotifications } from '../notifications/notificationsSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './ProfilePage.module.css';
@@ -36,6 +37,7 @@ export const ProfilePage: React.FC = () => {
   const profiles = useAppSelector(state => state.discovery.profiles);
   const posts = useAppSelector(state => state.feed.posts);
   const following = useAppSelector(state => state.connections.following);
+  const blockedUsers = useAppSelector(state => state.connections.blockedUsers);
   const [loadedProfile, setLoadedProfile] = useState<(typeof profiles)[number] | null>(null);
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export const ProfilePage: React.FC = () => {
 
   const profile = loadedProfile?.id === userId ? loadedProfile : profiles.find(p => p.id === userId);
   if (!profile) return null;
+  const isBlocked = blockedUsers.some(user => user.id === profile.id);
   const isFollowed = isFollowingProfile(profile, following);
   const userPosts = profile.isPrivate && !isFollowed ? [] : posts.filter?.(p => p.userId === profile.id);
 
@@ -123,21 +126,35 @@ export const ProfilePage: React.FC = () => {
       icon: <Flag size={14} />,
       onClick: () => navigate(ROUTES.REPORT(profile.id))
     },
-    {
-      key: 'block',
-      label: 'Block User',
-      icon: <ShieldAlert size={14} />,
-      danger: true,
-      onClick: () => {
-        void socialApi.setBlocked(profile.id, true)
-          .then(() => {
-            dispatch(blockUser(profile));
-            message.warning(`Blocked ${profile.fullName}`);
-            navigate(ROUTES.FEED);
-          })
-          .catch(error => message.error(error instanceof Error ? error.message : 'Unable to block user.'));
-      }
-    }
+    isBlocked
+      ? {
+          key: 'unblock',
+          label: 'Unblock User',
+          icon: <ShieldCheck size={14} />,
+          onClick: () => {
+            void socialApi.setBlocked(profile.id, false)
+              .then(() => {
+                dispatch(unblockUser(profile.id));
+                message.success(`Unblocked ${profile.fullName}`);
+              })
+              .catch(error => message.error(error instanceof Error ? error.message : 'Unable to unblock user.'));
+          }
+        }
+      : {
+          key: 'block',
+          label: 'Block User',
+          icon: <ShieldAlert size={14} />,
+          danger: true,
+          onClick: () => {
+            void socialApi.setBlocked(profile.id, true)
+              .then(() => {
+                dispatch(blockUser(profile));
+                message.warning(`Blocked ${profile.fullName}`);
+                navigate(ROUTES.FEED);
+              })
+              .catch(error => message.error(error instanceof Error ? error.message : 'Unable to block user.'));
+          }
+        }
   ];
 
   return (
