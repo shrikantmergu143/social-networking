@@ -20,7 +20,7 @@ export const RightSidebar: React.FC = () => {
 
   // Suggested people who aren't followed yet
   const suggested = profiles.filter?.(
-    p => !following.some(f => f.id === p.id) && p.id !== 'usr_me'
+    p => !following.some?.(f => f.id === p.id) && p.id !== 'usr_me'
   ).slice(0, 4);
 
   const trendingTopics = [

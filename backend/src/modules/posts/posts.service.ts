@@ -15,7 +15,10 @@ import { PostComment } from './entities/post-comment.entity';
 import { User } from '../users/entities/user.entity';
 import { UpsertPostDto } from './dto/post.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationTargetType, NotificationType } from '../../shared/entity/enum';
+import {
+  NotificationTargetType,
+  NotificationType,
+} from '../../shared/entity/enum';
 import { UserFollow } from '../users/entities/user-follow.entity';
 
 export interface FeedComment {
@@ -48,7 +51,7 @@ export class PostsService {
       where: { followerId: userId },
       select: { followingId: true },
     });
-    const followedIds = followRows.map(follow => follow.followingId);
+    const followedIds = followRows.map((follow) => follow.followingId);
     const posts = await this.posts.find({
       where: [
         { visibility: PostVisibility.PUBLIC },
@@ -59,15 +62,24 @@ export class PostsService {
         user: true,
         images: true,
         tags: true,
-        comments: { user: true, likes: true, replies: { user: true, likes: true } },
+        comments: {
+          user: true,
+          likes: true,
+          replies: { user: true, likes: true },
+        },
         likes: true,
         saves: true,
       },
       order: { createdAt: 'DESC' },
     });
     return posts
-      .filter?.(post => !post.user.isPrivate || post.userId === userId || followedIds.includes(post.userId))
-      .map(post => this.toFeedPost(post, userId));
+      .filter?.(
+        (post) =>
+          !post.user.isPrivate ||
+          post.userId === userId ||
+          followedIds.includes(post.userId),
+      )
+      .map((post) => this.toFeedPost(post, userId));
   }
 
   async getOwnPosts(userId: string) {
@@ -77,13 +89,17 @@ export class PostsService {
         user: true,
         images: true,
         tags: true,
-        comments: { user: true, likes: true, replies: { user: true, likes: true } },
+        comments: {
+          user: true,
+          likes: true,
+          replies: { user: true, likes: true },
+        },
         likes: true,
         saves: true,
       },
       order: { createdAt: 'DESC' },
     });
-    return posts.map(post => this.toFeedPost(post, userId));
+    return posts.map((post) => this.toFeedPost(post, userId));
   }
 
   async create(userId: string, dto: UpsertPostDto) {
@@ -159,7 +175,8 @@ export class PostsService {
     await this.assertPostExists(postId);
     const saves = this.dataSource.getRepository(PostSave);
     const existing = await saves.findOneBy({ postId, userId });
-    if (isSaved && !existing) await saves.save(saves.create({ postId, userId }));
+    if (isSaved && !existing)
+      await saves.save(saves.create({ postId, userId }));
     if (!isSaved && existing) await saves.delete({ id: existing.id });
     return { isSaved };
   }
@@ -181,7 +198,9 @@ export class PostsService {
         ),
       );
     }
-    const uniqueTags = [...new Set(dto.tags.map((tag) => tag.trim()).filter?.(Boolean))];
+    const uniqueTags = [
+      ...new Set(dto.tags.map((tag) => tag.trim()).filter?.(Boolean)),
+    ];
     if (uniqueTags.length) {
       await tags.save(uniqueTags.map((tag) => tags.create({ postId, tag })));
     }
@@ -194,7 +213,8 @@ export class PostsService {
 
   private assertOwner(post: Post | null, userId: string): asserts post is Post {
     if (!post) throw new NotFoundException('Post not found.');
-    if (post.userId !== userId) throw new ForbiddenException('You cannot modify this post.');
+    if (post.userId !== userId)
+      throw new ForbiddenException('You cannot modify this post.');
   }
 
   private async findPostForUser(postId: string, userId: string) {
@@ -204,7 +224,11 @@ export class PostsService {
         user: true,
         images: true,
         tags: true,
-        comments: { user: true, likes: true, replies: { user: true, likes: true } },
+        comments: {
+          user: true,
+          likes: true,
+          replies: { user: true, likes: true },
+        },
         likes: true,
         saves: true,
       },
@@ -249,8 +273,8 @@ export class PostsService {
       ),
       sharesCount: 0,
       createdAt: post.createdAt.toISOString(),
-      isLiked: post.likes?.some((like) => like.userId === userId) ?? false,
-      isSaved: post.saves?.some((save) => save.userId === userId) ?? false,
+      isLiked: post.likes?.some?.((like) => like.userId === userId) ?? false,
+      isSaved: post.saves?.some?.((save) => save.userId === userId) ?? false,
       tags: (post.tags ?? []).map((tag) => tag.tag),
       visibility: post.visibility,
       comments: (post.comments ?? [])

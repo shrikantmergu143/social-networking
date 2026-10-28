@@ -28,7 +28,7 @@ export const storiesSlice = createSlice({
       }
       // Update hasUnseenStories if all stories of that user are viewed
       state.stories.forEach(userStory => {
-        const hasUnseen = userStory.stories.some(st => !state.viewedStoryIds.includes(st.id));
+        const hasUnseen = userStory.stories.some?.(st => !state.viewedStoryIds.includes(st.id));
         userStory.hasUnseenStories = hasUnseen;
       });
     },

@@ -66,7 +66,7 @@ export const DiscoveryPage: React.FC = () => {
       const nameMatch = p.fullName.toLowerCase().includes(q);
       const locationMatch = p.location.toLowerCase().includes(q);
       const bioMatch = p.bio?.toLowerCase().includes(q) || false;
-      const interestMatch = p.interests?.some(i => i.toLowerCase().includes(q)) || false;
+      const interestMatch = p.interests?.some?.(i => i.toLowerCase().includes(q)) || false;
       if (!nameMatch && !locationMatch && !bioMatch && !interestMatch) {
         return false;
       }

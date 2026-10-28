@@ -86,16 +86,16 @@ export const discoverySlice = createSlice({
       state.filters = defaultFilters;
     },
     toggleSaveProfile: (state, action: PayloadAction<string>) => {
-      const id = action.payload;
-      const idx = state.savedProfileIds.indexOf(id);
+      const id = action?.payload;
+      const idx = state?.savedProfileIds?.indexOf?.(id);
       if (idx >= 0) {
-        state.savedProfileIds.splice(idx, 1);
-        state.savedProfiles = state.savedProfiles.filter?.(profile => profile.id !== id);
+        state?.savedProfileIds?.splice?.(idx, 1);
+        state.savedProfiles = state?.savedProfiles?.filter?.(profile => profile.id !== id);
       } else {
-        state.savedProfileIds.push(id);
-        const profile = state.profiles.find(item => item.id === id);
-        if (profile && !state.savedProfiles.some(item => item.id === id)) {
-          state.savedProfiles.unshift(profile);
+        state?.savedProfileIds?.push?.(id);
+        const profile = state.profiles.find(item => item?.id === id);
+        if (profile && !state?.savedProfiles?.some?.(item => item?.id === id)) {
+          state?.savedProfiles?.unshift?.(profile);
         }
       }
     },

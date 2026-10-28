@@ -13,6 +13,7 @@ import {
   ValidationArguments,
 } from 'class-validator';
 import { Gender } from 'src/shared/entity/enum';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class PasswordsMatchConstraint implements ValidatorConstraintInterface {
   validate(confirmPassword: unknown, args: ValidationArguments): boolean {
@@ -51,27 +52,33 @@ class AdultBirthDateConstraint implements ValidatorConstraintInterface {
 }
 
 export class RegisterDto {
+  @ApiProperty({ example: 'Avery Johnson', minLength: 2, maxLength: 150 })
   @IsString()
   @MinLength(2)
   @MaxLength(150)
   fullName: string;
 
+  @ApiProperty({ example: 'avery@example.com' })
   @IsEmail()
   @MaxLength(255)
   email: string;
 
+  @ApiPropertyOptional({ example: '+1-555-0100', maxLength: 30 })
   @IsOptional()
   @IsString()
   @MaxLength(30)
   phoneNumber?: string;
 
+  @ApiProperty({ example: '1995-06-15', format: 'date', description: 'Must be 18 or older' })
   @IsDateString({ strict: true })
   @Validate(AdultBirthDateConstraint)
   birthDate: string;
 
+  @ApiProperty({ enum: Gender, example: Gender.WOMAN })
   @IsEnum(Gender)
   gender: Gender;
 
+  @ApiProperty({ example: 'Example!Pass123', minLength: 12, maxLength: 72, description: 'Must include uppercase, lowercase, number, and special character' })
   @IsString()
   @MinLength(12)
   @MaxLength(72, {
@@ -83,6 +90,7 @@ export class RegisterDto {
   })
   password: string;
 
+  @ApiProperty({ example: 'Example!Pass123' })
   @IsString()
   @Validate(PasswordsMatchConstraint)
   confirmPassword: string;

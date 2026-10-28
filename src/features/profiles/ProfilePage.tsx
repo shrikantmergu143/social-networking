@@ -57,9 +57,9 @@ export const ProfilePage: React.FC = () => {
 
   const profile = loadedProfile?.id === userId ? loadedProfile : profiles.find(p => p.id === userId);
   if (!profile) return null;
-  const isBlocked = blockedUsers.some(user => user.id === profile.id);
+  const isBlocked = blockedUsers.some?.(user => user.id === profile.id);
   const isFollowed = isFollowingProfile(profile, following);
-  const userPosts = profile.isPrivate && !isFollowed ? [] : posts.filter?.(p => p.userId === profile.id);
+  const userPosts = profile.isPrivate && !isFollowed ? [] : posts?.filter?.(p => p.userId === profile.id);
 
   const handleLike = async () => {
     try {

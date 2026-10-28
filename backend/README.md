@@ -221,6 +221,57 @@ http://localhost:4000/api
 
 The URL assumes `PORT=4000` and `app.setGlobalPrefix('api')` are configured.
 
+## Interactive API Documentation
+
+Start the backend, then open Swagger UI at:
+
+```text
+http://localhost:4000/api/docs
+```
+
+The OpenAPI JSON is available at `/api/docs-json`. The UI groups routes by module, shows request validation constraints and example payloads, and supports the protected endpoints' JWT bearer authentication. After logging in, copy `accessToken`, choose **Authorize**, and enter the token value. Swagger adds the `Bearer` prefix to requests.
+
+All feature routes except registration and login require `Authorization: Bearer <accessToken>`. Requests are validated with the DTO constraints shown in the schemas. Validation errors return HTTP 400; missing or invalid credentials return HTTP 401; forbidden operations return HTTP 403; missing resources return HTTP 404.
+
+### Example: Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+```
+
+```json
+{
+  "email": "avery@example.com",
+  "password": "Example!Pass123"
+}
+```
+
+The response contains `accessToken`, `tokenType`, `expiresIn`, and a public `user` object. Use the access token as a bearer token for protected routes.
+
+### Example: Create a post
+
+```http
+POST /api/posts
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+```
+
+```json
+{
+  "caption": "A sunny afternoon by the coast.",
+  "images": ["https://cdn.example.com/photo.jpg"],
+  "tags": ["weekend", "coast"],
+  "visibility": "public"
+}
+```
+
+The response is the created post resource, including its `id`, author, image URLs, tags, visibility, timestamps, and engagement counts. Swagger shows the complete example.
+
+### Image uploads
+
+`POST /api/upload` accepts `multipart/form-data` with a `file` field and an optional `type` field (`profile`, `avatar`, `cover`, `post`, or `story`). Accepted files are JPG, PNG, or WebP images up to 5 MB. The response includes the uploaded file metadata and public URL.
+
 ## Development Guidelines
 
 - Keep database credentials in environment variables.

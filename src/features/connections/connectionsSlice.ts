@@ -49,7 +49,7 @@ export const connectionsSlice = createSlice({
       if (reqIndex >= 0) {
         const user = state.pendingRequests[reqIndex];
         state.pendingRequests.splice(reqIndex, 1);
-        if (!state.followers.some(f => f.id === userId)) {
+        if (!state.followers.some?.(f => f.id === userId)) {
           state.followers.unshift({ ...user, isFollowing: true });
         }
       }
@@ -62,7 +62,7 @@ export const connectionsSlice = createSlice({
       state.following = state.following.filter?.(u => u.id !== user.id);
       state.followers = state.followers.filter?.(u => u.id !== user.id);
       state.pendingRequests = state.pendingRequests.filter?.(u => u.id !== user.id);
-      if (!state.blockedUsers.some(u => u.id === user.id)) {
+      if (!state.blockedUsers.some?.(u => u.id === user.id)) {
         state.blockedUsers.push(user);
       }
     },

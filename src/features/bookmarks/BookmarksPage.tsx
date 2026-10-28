@@ -19,7 +19,8 @@ export const BookmarksPage: React.FC = () => {
   const { posts, savedPostIds } = useAppSelector(state => state.feed);
   const { savedProfiles, savedProfileIds } = useAppSelector(state => state.discovery);
 
-  const savedPosts = posts.filter?.(p => savedPostIds.includes(p.id));
+    console.log("savedPostIds", savedPostIds)
+  const savedPosts = posts?.filter?.(p => savedPostIds.includes(p.id));
   const profilesToShow = savedProfiles.filter?.(profile => savedProfileIds.includes(profile.id));
 
   return (

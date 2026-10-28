@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 import { AppModule } from './app.module';
 
@@ -16,6 +17,23 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api');
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Social Networking API')
+    .setDescription(
+      'REST API for authentication, profiles, posts, messaging, dating, notifications, and uploads. Protected endpoints require a Bearer JWT.',
+    )
+    .setVersion('1.0.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, swaggerDocument, {
+    useGlobalPrefix: true,
+    swaggerOptions: { persistAuthorization: true },
+  });
 
   const configService = app.get(ConfigService);
 

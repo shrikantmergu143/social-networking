@@ -19,7 +19,7 @@ export const matchesSlice = createSlice({
       state.matches = action.payload;
     },
     addMatch: (state, action: PayloadAction<UserProfile>) => {
-      if (!state.matches.some(m => m.id === action.payload.id)) {
+      if (!state.matches.some?.(m => m.id === action.payload.id)) {
         state.matches.unshift(action.payload);
       }
     },

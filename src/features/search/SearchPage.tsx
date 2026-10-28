@@ -58,10 +58,10 @@ export const SearchPage: React.FC = () => {
   }, [q]);
 
   const matchedPosts = q
-    ? posts.filter?.(p =>
+    ? posts?.filter?.(p =>
         p.caption.toLowerCase().includes(q) ||
         p.author.name.toLowerCase().includes(q) ||
-        p.tags.some(t => t.toLowerCase().includes(q))
+        p.tags.some?.(t => t.toLowerCase().includes(q))
       )
     : [];
 

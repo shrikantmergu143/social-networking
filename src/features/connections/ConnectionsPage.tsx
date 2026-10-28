@@ -60,7 +60,7 @@ export const ConnectionsPage: React.FC = () => {
 
   // Suggested = profiles not yet in following and not 'usr_me'
   const suggested = profiles.filter?.(
-    p => p.id !== 'usr_me' && !following.some(f => f.id === p.id)
+    p => p.id !== 'usr_me' && !following.some?.(f => f.id === p.id)
   );
 
   const getList = () => {

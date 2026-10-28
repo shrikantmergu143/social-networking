@@ -45,7 +45,7 @@ export const AppUpload: React.FC<AppUploadProps> = ({
 
   // Sync externally-managed URLs without interrupting an in-progress upload.
   useEffect(() => {
-    if (!fileList.some(file => file.status === 'uploading')) {
+    if (!fileList.some?.(file => file.status === 'uploading')) {
       setFileList(createFileList(values));
     }
   }, [value]);
@@ -89,7 +89,7 @@ export const AppUpload: React.FC<AppUploadProps> = ({
 
     // Keep the uploading item in Ant Design's list. Updating the parent only
     // after completion prevents the controlled value from removing the file.
-    if (nextFileList.some(file => file.status === 'done')) {
+    if (nextFileList.some?.(file => file.status === 'done')) {
       updateValue(urls);
     }
   };

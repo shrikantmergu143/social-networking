@@ -15,8 +15,8 @@ import styles from './FeedPage.module.css';
 export const FeedPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { posts, activeFilter } = useAppSelector(state => state.feed);
-  const currentUser = useAppSelector(state => state.auth.currentUser);
-  const following = useAppSelector(state => state.connections.following);
+  const currentUser = useAppSelector(state => state?.auth?.currentUser);
+  const following = useAppSelector(state => state?.connections?.following);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isStoryOpen, setIsStoryOpen] = useState(false);
@@ -29,7 +29,7 @@ export const FeedPage: React.FC = () => {
       })
       .catch(error => {
         if (active) {
-          message.error(error instanceof Error ? error.message : 'Unable to load posts.');
+          message.error(error instanceof Error ? error?.message : 'Unable to load posts.');
         }
       });
 
@@ -39,12 +39,12 @@ export const FeedPage: React.FC = () => {
   }, [dispatch]);
 
   // Filter posts based on active tab
-  const filteredPosts = posts.filter?.(post => {
+  const filteredPosts = posts?.filter?.(post => {
     if (activeFilter === 'following') {
-      return following.some(f => f.id === post.userId) || post.userId === currentUser?.id;
+      return following?.some?.(f => f.id === post?.userId) || post?.userId === currentUser?.id;
     }
     if (activeFilter === 'trending') {
-      return post.likesCount > 300;
+      return post?.likesCount > 300;
     }
     return true;
   });
@@ -82,7 +82,7 @@ export const FeedPage: React.FC = () => {
           className={`${styles.tabBtn} ${activeFilter === 'following' ? styles.tabBtnActive : ''}`}
           onClick={() => dispatch(setFeedFilter('following'))}
         >
-          Following ({following.length})
+          Following ({following?.length})
         </button>
         <button
           className={`${styles.tabBtn} ${activeFilter === 'trending' ? styles.tabBtnActive : ''}`}
@@ -95,7 +95,7 @@ export const FeedPage: React.FC = () => {
       {/* Posts List */}
       {filteredPosts.length > 0 ? (
         filteredPosts.map(post => (
-          <PostCard key={post.id} post={post} />
+          <PostCard key={post?.id} post={post} />
         ))
       ) : (
         <AppEmptyState

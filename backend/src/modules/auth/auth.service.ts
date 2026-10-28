@@ -127,7 +127,12 @@ export class AuthService {
       coverImage: user.coverImage ?? '',
       relationshipGoal: user.relationshipGoal ?? 'Still figuring it out',
       age: user.birthDate
-        ? Math.max(0, Math.floor((Date.now() - new Date(user.birthDate).getTime()) / 31557600000))
+        ? Math.max(
+            0,
+            Math.floor(
+              (Date.now() - new Date(user.birthDate).getTime()) / 31557600000,
+            ),
+          )
         : 18,
       distanceKm: 0,
       photos: [],

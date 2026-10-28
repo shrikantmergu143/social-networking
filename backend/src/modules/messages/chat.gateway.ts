@@ -204,7 +204,7 @@ export class ChatGateway implements OnGatewayConnection {
       where: { conversationId },
       select: { userId: true },
     });
-    if (!participants.some(participant => participant.userId === userId)) return false;
+    if (!participants.some?.(participant => participant.userId === userId)) return false;
 
     const otherUserId = participants.find(participant => participant.userId !== userId)?.userId;
     if (!otherUserId) return false;

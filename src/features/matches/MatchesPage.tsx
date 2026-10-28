@@ -22,7 +22,7 @@ export const MatchesPage: React.FC = () => {
   const filteredMatches = matches.filter?.(m =>
     m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     m.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.interests.some(i => i.toLowerCase().includes(searchQuery.toLowerCase()))
+    m.interests.some?.(i => i.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleStartChat = async (user: UserProfile) => {

@@ -21,7 +21,7 @@ export class StoriesService {
       relations: { user: true, items: true, views: true },
       order: { createdAt: 'DESC' },
     });
-    return stories.filter?.(story => story.items.some(item =>
+    return stories.filter?.(story => story.items.some?.(item =>
       Date.now() - item.createdAt.getTime() < 24 * 60 * 60 * 1000
     )).map(story => ({
       id: story.id,
@@ -29,8 +29,8 @@ export class StoriesService {
       userName: story.user.fullName,
       userAvatar: story.user.avatar ?? '',
       isVerified: story.user.isVerified,
-      hasUnseenStories: story.items.some(item =>
-        !story.views.some(view => view.storyItemId === item.id && view.userId === viewerId)
+      hasUnseenStories: story.items.some?.(item =>
+        !story.views.some?.(view => view.storyItemId === item.id && view.userId === viewerId)
       ),
       stories: story.items
         .filter?.(item => Date.now() - item.createdAt.getTime() < 24 * 60 * 60 * 1000)
@@ -42,7 +42,7 @@ export class StoriesService {
           durationSeconds: item.durationSeconds,
           caption: item.caption ?? undefined,
           timestamp: item.createdAt.toISOString(),
-          viewed: story.views.some(view => view.storyItemId === item.id && view.userId === viewerId),
+          viewed: story.views.some?.(view => view.storyItemId === item.id && view.userId === viewerId),
         })),
     }));
   }

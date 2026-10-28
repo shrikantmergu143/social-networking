@@ -89,7 +89,7 @@ export const messagesSlice = createSlice({
       const { message, currentUserId } = action.payload;
       const { conversationId } = message;
       state.messages[conversationId] ||= [];
-      if (state.messages[conversationId].some(item => item.id === message.id)) return;
+      if (state.messages[conversationId].some?.(item => item.id === message.id)) return;
       state.messages[conversationId].push(message);
 
       const conv = state.conversations.find(c => c.id === conversationId);

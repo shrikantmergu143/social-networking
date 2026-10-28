@@ -18,6 +18,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthenticatedRequestUser } from '../auth/interfaces/authenticated-request-user.interface';
 import { UploadService, UploadInput } from './upload.service';
 import { UploadType } from './entities/upload-file.entity';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -37,10 +46,46 @@ interface UploadRequest extends Request {
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
+@ApiTags('Uploads')
+@ApiBearerAuth('JWT-auth')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Upload a profile, post, or story image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'JPG, PNG, or WebP; maximum 5 MB',
+        },
+        type: {
+          type: 'string',
+          enum: ['profile', 'avatar', 'cover', 'post', 'story'],
+          example: 'profile',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Uploaded file metadata and its public URL.',
+    schema: {
+      example: {
+        id: '2a1a1f2c-4c7a-4b2e-8e99-74d73041d7a1',
+        type: 'profile',
+        originalName: 'portrait.jpg',
+        url: 'http://localhost:3000/storage/profile/portrait.jpg',
+        mimeType: 'image/jpeg',
+        size: 245760,
+      },
+    },
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -72,6 +117,31 @@ export class UploadController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List uploaded files' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: ['profile', 'avatar', 'cover', 'post', 'story'],
+    example: 'profile',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Uploaded file records, newest first.',
+    schema: {
+      example: [
+        {
+          id: '2a1a1f2c-4c7a-4b2e-8e99-74d73041d7a1',
+          type: 'profile',
+          originalName: 'portrait.jpg',
+          fileName: '2a1a1f2c-4c7a-4b2e-8e99-74d73041d7a1.jpg',
+          storagePath: 'storage/profile/portrait.jpg',
+          url: 'http://localhost:3000/storage/profile/portrait.jpg',
+          mimeType: 'image/jpeg',
+          size: 245760,
+        },
+      ],
+    },
+  })
   list(@Req() request: UploadRequest, @Query('type') type?: UploadType) {
     if (type && !ALLOWED_UPLOAD_TYPES.includes(type)) {
       throw new BadRequestException('Invalid upload type.');
@@ -80,6 +150,14 @@ export class UploadController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete an uploaded file' })
+  @ApiResponse({
+    status: 200,
+    description: 'File deleted.',
+    schema: {
+      example: { id: '2a1a1f2c-4c7a-4b2e-8e99-74d73041d7a1', deleted: true },
+    },
+  })
   remove(@Param('id') id: string, @Req() request: UploadRequest) {
     return this.uploadService.remove(id, request.user.id);
   }
