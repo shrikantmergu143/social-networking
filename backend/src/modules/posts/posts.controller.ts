@@ -2,25 +2,31 @@ import {
   Body,
   Controller,
   Delete,
+  DefaultValuePipe,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
   Put,
+  Query,
+  Res,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UpsertPostDto, SetPostLikeDto, SetPostSaveDto } from './dto/post.dto';
 import { PostsService } from './posts.service';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import response from '../../shared/response';
 
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
@@ -33,7 +39,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Get the authenticated user feed' })
   @ApiResponse({
     status: 200,
-    description: 'Feed posts, newest first.',
+    description: 'A page of feed posts, newest first, optionally filtered by search.',
     schema: {
       example: [
         {
@@ -61,8 +67,45 @@ export class PostsController {
       ],
     },
   })
-  getFeed(@Req() request: Request & { user: { id: string } }) {
-    return this.postsService.getFeed(request.user.id);
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, example: 'photography' })
+  async getFeed(
+    @Req() request: Request & { user: { id: string } },
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('search', new DefaultValuePipe('')) search: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.postsService.getFeed({
+      userId: request.user.id,
+      page,
+      limit,
+      search,
+    });
+    return response.successResponseWithPagination(result, res);
+  }
+
+  @Get('saved/posts')
+  @ApiOperation({ summary: 'Get the authenticated user saved feed' })
+  @ApiResponse({
+    status: 200,
+    description: 'A page of saved feed posts, newest first.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  async getSavedFeed(
+    @Req() request: Request & { user: { id: string } },
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Res() res: Response,
+  ) {
+    const result = await this.postsService.getSavedFeed(
+      request.user.id,
+      page,
+      limit,
+    );
+    return response.successResponseWithPagination(result, res);
   }
 
   @Get('me')

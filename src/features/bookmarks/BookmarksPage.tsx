@@ -1,26 +1,72 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bookmark, Sparkles, CheckCircle, Trash2 } from 'lucide-react';
+import { Bookmark, CheckCircle, Trash2 } from 'lucide-react';
 import { message } from '../../app/notification';
 import { AppAvatar } from '../../components/common/AppAvatar';
-import { AppButton } from '../../components/common/AppButton';
 import { PostCard } from '../feed/PostCard';
 import { AppEmptyState } from '../../components/common/AppEmptyState';
-import { useAppDispatch, useAppSelector } from '../../hooks';
+import { useAppDispatch, useAppSelector, useInfiniteScroll } from '../../hooks';
 import { toggleSaveProfile } from '../discovery/discoverySlice';
+import { appendSavedPosts, removeSavedPost, replaceSavedPosts } from '../feed/feedSlice';
 import { ROUTES } from '../../routes/paths';
 import styles from './BookmarksPage.module.css';
 import { socialApi } from '../../lib/social.api';
+import { feedApi } from '../feed/feed.api';
+
+const SAVED_POSTS_PAGE_SIZE = 1;
 
 export const BookmarksPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'posts' | 'profiles'>('posts');
+  const [page, setPage] = useState(1);
+  const [isLoadingSavedPosts, setIsLoadingSavedPosts] = useState(true);
 
-  const { posts, savedPostIds } = useAppSelector(state => state.feed);
   const { savedProfiles, savedProfileIds } = useAppSelector(state => state.discovery);
+  const savedPostsState = useAppSelector(state => state?.feed?.savedPosts);
+  const { data: savedPosts, total: totalSavedPosts, totalPages } = savedPostsState;
 
-    console.log("savedPostIds", savedPostIds)
-  const savedPosts = posts?.filter?.(p => savedPostIds.includes(p.id));
+  useEffect(() => {
+    let active = true;
+    setIsLoadingSavedPosts(true);
+    feedApi.getSavedPosts(page, SAVED_POSTS_PAGE_SIZE)
+      .then(result => {
+        if (active) {
+          const pagination = {
+            data: result?.data,
+            page: result?.page,
+            limit: result?.limit,
+            total: result?.total,
+            totalPages: result?.totalPages,
+          };
+          dispatch(page === 1 ? replaceSavedPosts(pagination) : appendSavedPosts(pagination));
+        }
+      })
+      .catch(error => {
+        if (active) {
+          message.error(error instanceof Error ? error.message : 'Unable to load saved posts.');
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingSavedPosts(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch, page]);
+
+  const loadNextPage = useCallback((nextPage: number) => {
+    setPage(currentPage => currentPage === nextPage - 1 ? nextPage : currentPage);
+  }, []);
+
+  useInfiniteScroll({
+    currentPage: page,
+    hasMore: activeTab === 'posts' && totalPages > 0 && page < totalPages,
+    isLoading: isLoadingSavedPosts,
+    onLoadMore: loadNextPage,
+    threshold: 10
+  });
+
   const profilesToShow = savedProfiles.filter?.(profile => savedProfileIds.includes(profile.id));
 
   return (
@@ -40,7 +86,7 @@ export const BookmarksPage: React.FC = () => {
           className={`${styles.tabBtn} ${activeTab === 'posts' ? styles.tabBtnActive : ''}`}
           onClick={() => setActiveTab('posts')}
         >
-          Saved Posts ({savedPosts.length})
+          Saved Posts ({totalSavedPosts})
         </button>
         <button
           className={`${styles.tabBtn} ${activeTab === 'profiles' ? styles.tabBtnActive : ''}`}
@@ -51,10 +97,18 @@ export const BookmarksPage: React.FC = () => {
       </div>
 
       {activeTab === 'posts' ? (
-        savedPosts.length > 0 ? (
+        savedPosts?.length > 0 ? (
           <div>
-            {savedPosts.map(post => (
-              <PostCard key={post.id} post={post} />
+            {savedPosts?.map?.(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onSavedChange={(postId, isSaved) => {
+                  if (!isSaved) {
+                    dispatch(removeSavedPost(postId));
+                  }
+                }}
+              />
             ))}
           </div>
         ) : (
@@ -115,6 +169,9 @@ export const BookmarksPage: React.FC = () => {
             description="Save profiles while exploring Discovery to revisit them anytime."
           />
         )
+      )}
+      {activeTab === 'posts' && isLoadingSavedPosts && savedPosts?.length > 0 && (
+        <p role="status">Loading more saved posts...</p>
       )}
     </div>
   );

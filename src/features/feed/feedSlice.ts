@@ -4,16 +4,57 @@ import type { FeedPost, PostComment } from '../../types';
 export interface FeedState {
   posts: FeedPost[];
   profilePosts: FeedPost[];
+  savedPosts: SavedPostsState;
   savedPostIds: string[];
   isLoading: boolean;
+  pagination: FeedPagination;
   activeFilter: 'all' | 'following' | 'trending';
+}
+
+export interface FeedPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  search: string;
+}
+
+export interface FeedPagePayload {
+  data: FeedPost[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  search: string;
+}
+
+export interface SavedPostsState {
+  data: FeedPost[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
 }
 
 const initialState: FeedState = {
   posts: [],
   profilePosts: [],
+  savedPosts: {
+    data: [],
+    page: 0,
+    limit: 0,
+    total: 0,
+    totalPages: 0,
+  },
   savedPostIds: [],
   isLoading: false,
+  pagination: {
+    page: 0,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    search: '',
+  },
   activeFilter: 'all'
 };
 
@@ -29,6 +70,12 @@ const clonePost = (post: FeedPost): FeedPost => ({
   tags: [...post.tags],
   comments: post.comments.map(cloneComment),
 });
+
+const mergeUniquePosts = (currentPosts: FeedPost[], incomingPosts: FeedPost[]) => {
+  const postsById = new Map(currentPosts.map(post => [post.id, post]));
+  incomingPosts.forEach(post => postsById.set(post.id, post));
+  return Array.from(postsById.values());
+};
 
 export const feedSlice = createSlice({
   name: 'feed',
@@ -125,6 +172,64 @@ export const feedSlice = createSlice({
       state.posts = action?.payload;
       state.savedPostIds = action?.payload?.filter?.(post => post?.isSaved).map(post => post?.id);
     },
+    appendPosts: (state, action: PayloadAction<FeedPost[]>) => {
+      state.posts = mergeUniquePosts(state.posts, action.payload);
+      state.savedPostIds = state.posts.filter(post => post.isSaved).map(post => post.id);
+    },
+    setFeedLoading: (state, action: PayloadAction<boolean>) => {
+      state.isLoading = action.payload;
+    },
+    resetFeed: (state, action: PayloadAction<string>) => {
+      state.posts = [];
+      state.pagination = {
+        page: 0,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+        search: action.payload,
+      };
+    },
+    replaceFeedPage: (state, action: PayloadAction<FeedPagePayload>) => {
+      state.posts = action.payload.data;
+      state.pagination = {
+        page: action.payload.page,
+        limit: action.payload.limit,
+        total: action.payload.total,
+        totalPages: action.payload.totalPages,
+        search: action.payload.search,
+      };
+      state.savedPostIds = action.payload.data.filter(post => post.isSaved).map(post => post.id);
+    },
+    appendFeedPage: (state, action: PayloadAction<FeedPagePayload>) => {
+      state.posts = mergeUniquePosts(state.posts, action.payload.data);
+      state.pagination = {
+        page: action.payload.page,
+        limit: action.payload.limit,
+        total: action.payload.total,
+        totalPages: action.payload.totalPages,
+        search: action.payload.search,
+      };
+      state.savedPostIds = state.posts.filter(post => post.isSaved).map(post => post.id);
+    },
+    replaceSavedPosts: (state, action: PayloadAction<SavedPostsState>) => {
+      state.savedPosts = {
+        ...action.payload,
+        data: mergeUniquePosts([], action.payload.data),
+      };
+    },
+    appendSavedPosts: (state, action: PayloadAction<SavedPostsState>) => {
+      state.savedPosts = {
+        ...action.payload,
+        data: mergeUniquePosts(state.savedPosts.data, action.payload.data),
+      };
+    },
+    removeSavedPost: (state, action: PayloadAction<string>) => {
+      state.savedPosts.data = state.savedPosts.data.filter(post => post.id !== action.payload);
+      state.savedPosts.total = Math.max(0, state.savedPosts.total - 1);
+      state.savedPosts.totalPages = state.savedPosts.limit > 0
+        ? Math.ceil(state.savedPosts.total / state.savedPosts.limit)
+        : 0;
+    },
     setPostLikeState: (
       state,
       action: PayloadAction<{ postId: string; isLiked: boolean; likesCount: number }>
@@ -172,6 +277,14 @@ export const {
   createPost,
   updatePost,
   replacePosts,
+  appendPosts,
+  setFeedLoading,
+  resetFeed,
+  replaceFeedPage,
+  appendFeedPage,
+  replaceSavedPosts,
+  appendSavedPosts,
+  removeSavedPost,
   replaceProfilePosts,
   setPostLikeState,
   setPostSavedState,

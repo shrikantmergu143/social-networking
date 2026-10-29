@@ -27,9 +27,10 @@ import { CreatePostModal } from '../../components/common/CreatePostModal';
 
 interface PostCardProps {
   post: FeedPost;
+  onSavedChange?: (postId: string, isSaved: boolean) => void;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post }) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onSavedChange }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const currentUser = useAppSelector(state => state.auth.currentUser);
@@ -101,6 +102,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     try {
       const result = await feedApi.setPostSaved(post.id, !post.isSaved);
       dispatch(setPostSavedState({ postId: post.id, ...result }));
+      onSavedChange?.(post.id, result.isSaved);
       message.success(result.isSaved ? 'Saved to your bookmarks' : 'Removed from saved items');
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Unable to update saved post.');

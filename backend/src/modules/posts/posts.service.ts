@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -46,18 +47,96 @@ export class PostsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async getFeed(userId: string) {
+  async getFeed({ userId, page = 1, limit = 10, search = '' }: any) {
+    if (page < 1) {
+      throw new BadRequestException('Page must be greater than or equal to 1.');
+    }
+    if (limit < 1 || limit > 100) {
+      throw new BadRequestException('Limit must be between 1 and 100.');
+    }
+
     const followRows = await this.dataSource.getRepository(UserFollow).find({
       where: { followerId: userId },
       select: { followingId: true },
     });
     const followedIds = followRows.map((follow) => follow.followingId);
+    const normalizedSearch = String(search ?? '').trim();
+    const feedQuery = this.posts
+      .createQueryBuilder('post')
+      .innerJoin('post.user', 'user')
+      .leftJoin('post.tags', 'tag')
+      .where('post.visibility = :visibility', {
+        visibility: PostVisibility.PUBLIC,
+      })
+      .andWhere(
+        '(user.isPrivate = false OR post.userId = :userId OR post.userId IN (:...followedIds))',
+        { userId, followedIds: followedIds.length ? followedIds : [userId] },
+      );
+
+    if (normalizedSearch) {
+      feedQuery.andWhere(
+        '(post.caption ILIKE :search OR user.fullName ILIKE :search OR user.username ILIKE :search OR tag.tag ILIKE :search)',
+        { search: `%${normalizedSearch}%` },
+      );
+    }
+
+    const [matchingPosts, total] = await feedQuery
+      .distinct(true)
+      .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('post.id', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const postIds = matchingPosts.map((post) => post.id);
+    if (!postIds.length) {
+      return { data: [], total, totalPages: Math.ceil(total / limit), limit, page };
+    }
+
     const posts = await this.posts.find({
-      where: [
-        { visibility: PostVisibility.PUBLIC },
-        { userId },
-        ...(followedIds.length ? [{ userId: In(followedIds) }] : []),
-      ],
+      where: { id: In(postIds) },
+      relations: {
+        user: true,
+        images: true,
+        tags: true,
+        comments: {
+          user: true,
+          likes: true,
+          replies: { user: true, likes: true },
+        },
+        likes: true,
+        saves: true,
+      },
+    });
+    const postsById = new Map(posts.map((post) => [post.id, post]));
+
+    return {
+      data: postIds
+        .map((postId) => postsById.get(postId))
+        .filter((post): post is Post => Boolean(post))
+        .map((post) => this.toFeedPost(post, userId)),
+      total,
+      totalPages: Math.ceil(total / limit),
+      limit,
+      page,
+    };
+  }
+
+  async getSavedFeed(userId: string, page: number, limit: number) {
+    if (page < 1) {
+      throw new BadRequestException('Page must be greater than or equal to 1.');
+    }
+    if (limit < 1 || limit > 100) {
+      throw new BadRequestException('Limit must be between 1 and 100.');
+    }
+
+    const savedRows = await this.dataSource.getRepository(PostSave).find({
+      where: { userId },
+      select: { postId: true },
+    });
+    const savedPostIds = savedRows.map((save) => save.postId);
+    const [posts, total] = await this.posts.findAndCount({
+      where: { id: In(savedPostIds) },
       relations: {
         user: true,
         images: true,
@@ -71,15 +150,17 @@ export class PostsService {
         saves: true,
       },
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return posts
-      .filter?.(
-        (post) =>
-          !post.user.isPrivate ||
-          post.userId === userId ||
-          followedIds.includes(post.userId),
-      )
-      .map((post) => this.toFeedPost(post, userId));
+
+    return {
+      data: posts.map((post) => this.toFeedPost(post, userId)),
+      total,
+      totalPages: Math.ceil(total / limit),
+      limit,
+      page,
+    };
   }
 
   async getOwnPosts(userId: string) {

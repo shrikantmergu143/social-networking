@@ -28,6 +28,18 @@ export interface CommentLikeResponse {
   likesCount: number;
 }
 
+export interface SavedPostsPage {
+  status: number;
+  message: string;
+  data: FeedPost[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type FeedPostsPage = SavedPostsPage;
+
 export function unwrapApiResponse<T>(response: ApiResponse<T>): T {
   if (!response.status || response.data === null) {
     throw new Error(response.error?.message || 'The request could not be completed.');
@@ -36,8 +48,28 @@ export function unwrapApiResponse<T>(response: ApiResponse<T>): T {
 }
 
 export const feedApi = {
-  async getPosts() {
-    return unwrapApiResponse(await http.get<FeedPost[]>('/posts'));
+  async getPosts(page = 1, limit = 10, search = '') {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      ...(search.trim() ? { search: search.trim() } : {}),
+    });
+    const response = await http.get<FeedPostsPage>(`/posts?${query.toString()}`);
+    if (!response.status || response.data === null) {
+      throw new Error(response.error?.message || 'The request could not be completed.');
+    }
+    return response.data;
+  },
+
+  async getSavedPosts(page: number, limit: number) {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const response = await http.get<SavedPostsPage>(
+      `/posts/saved/posts?${query.toString()}`
+    );
+    if (!response.status || response.data === null) {
+      throw new Error(response.error?.message || 'The request could not be completed.');
+    }
+    return response.data;
   },
 
   async getMyPosts() {

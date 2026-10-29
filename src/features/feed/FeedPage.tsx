@@ -1,42 +1,98 @@
-import React, { useEffect, useState } from 'react';
-import { Sparkles, Image as ImageIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Search, Sparkles, Image as ImageIcon, X } from 'lucide-react';
 import { StoriesCarousel } from '../stories/StoriesCarousel';
 import { PostCard } from './PostCard';
 import { CreatePostModal } from '../../components/common/CreatePostModal';
 import { CreateStoryModal } from '../../components/common/CreateStoryModal';
 import { AppAvatar } from '../../components/common/AppAvatar';
 import { AppEmptyState } from '../../components/common/AppEmptyState';
-import { useAppDispatch, useAppSelector } from '../../hooks';
-import { replacePosts, setFeedFilter } from './feedSlice';
+import { useAppDispatch, useAppSelector, useDebounce, useInfiniteScroll } from '../../hooks';
+import {
+  appendFeedPage,
+  resetFeed,
+  replaceFeedPage,
+  setFeedFilter,
+  setFeedLoading,
+} from './feedSlice';
 import { feedApi } from './feed.api';
 import { message } from '../../app/notification';
 import styles from './FeedPage.module.css';
 
 export const FeedPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { posts, activeFilter } = useAppSelector(state => state.feed);
+  const feedState = useAppSelector(state => state.feed);
+  const { posts, activeFilter, isLoading } = feedState;
+  const pagination = feedState.pagination ?? {
+    page: 0,
+    limit: 2,
+    total: 0,
+    totalPages: 0,
+    search: '',
+  };
   const currentUser = useAppSelector(state => state?.auth?.currentUser);
   const following = useAppSelector(state => state?.connections?.following);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isStoryOpen, setIsStoryOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const latestSearchRef = useRef(debouncedSearch);
+  const isCurrentSearch = pagination.search === debouncedSearch;
+  const currentPage = isCurrentSearch ? pagination.page : 0;
+  const totalPages = isCurrentSearch ? pagination.totalPages : 0;
+
+  useEffect(() => {
+    latestSearchRef.current = debouncedSearch;
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let active = true;
-    feedApi.getPosts()
-      .then(serverPosts => {
-        if (active) dispatch(replacePosts(serverPosts));
+    dispatch(resetFeed(debouncedSearch));
+    dispatch(setFeedLoading(true));
+    feedApi.getPosts(1, pagination.limit, debouncedSearch)
+      .then(result => {
+        if (active) {
+          dispatch(replaceFeedPage({ ...result, search: debouncedSearch }));
+        }
       })
       .catch(error => {
         if (active) {
           message.error(error instanceof Error ? error?.message : 'Unable to load posts.');
+        }
+      })
+      .finally(() => {
+        if (active && latestSearchRef.current === debouncedSearch) {
+          dispatch(setFeedLoading(false));
         }
       });
 
     return () => {
       active = false;
     };
-  }, [dispatch]);
+  }, [dispatch, debouncedSearch]);
+
+  const loadNextPage = useCallback((nextPage: number) => {
+    if (isLoading || !isCurrentSearch || nextPage <= currentPage) return;
+    dispatch(setFeedLoading(true));
+    feedApi.getPosts(nextPage, pagination.limit, debouncedSearch)
+      .then(result => {
+        dispatch(appendFeedPage({ ...result, search: debouncedSearch }));
+      })
+      .catch(error => message.error(error instanceof Error ? error.message : 'Unable to load more posts.'))
+      .finally(() => {
+        if (latestSearchRef.current === debouncedSearch) {
+          dispatch(setFeedLoading(false));
+        }
+      });
+  }, [currentPage, debouncedSearch, dispatch, isCurrentSearch, isLoading, pagination.limit]);
+
+  useInfiniteScroll({
+    currentPage,
+    hasMore: currentPage > 0 && currentPage < totalPages,
+    isLoading,
+    onLoadMore: loadNextPage,
+    threshold: 200,
+  });
 
   // Filter posts based on active tab
   const filteredPosts = posts?.filter?.(post => {
@@ -90,6 +146,17 @@ export const FeedPage: React.FC = () => {
         >
           Trending Sparks
         </button>
+      </div>
+
+      <div className={styles.feedSearch}>
+        <Search size={18} />
+        <input
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          placeholder="Search posts, creators, or tags..."
+          aria-label="Search feed"
+        />
+        {search && <button onClick={() => setSearch('')} aria-label="Clear feed search"><X size={16} /></button>}
       </div>
 
       {/* Posts List */}
